@@ -1,3 +1,83 @@
-.claude
+# Git ignore for a Java / Maven project
 
-.idea
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Compiled class files
+*.class
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+dependency-reduced-pom.xml
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+buildNumber.properties
+.mvn/timing.properties
+
+# Gradle
+.gradle/
+build/
+
+# Generated sources
+generated-sources/
+generated-test-sources/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Eclipse
+.classpath
+.project
+.settings/
+.buildpath
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+
+# Temporary files
+*~
+*.swp
+*.swo
+*.tmp
+
+# OS generated files
+Thumbs.db
+desktop.ini
+
+# Environment files
+.env
+*.env
+
+# Coverage
+coverage/
+*.coverage
+
+# Other
+logs/
+tmp/
+
+# Keep .claude if you intentionally want it ignored
+.claude
