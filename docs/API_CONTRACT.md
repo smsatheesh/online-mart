@@ -87,6 +87,90 @@ Responsible for product discovery, product details, category filtering, and inve
 
 ---
 
+## POST /products
+
+### Endpoint
+
+```http
+POST /products
+```
+
+### Request
+```json
+{
+  "productName": "Dell Inspiron 15",
+  "categoryId": "CAT001",
+  "description": "15 inch laptop with Intel i7 processor",
+  "price": 55000,
+  "availableQuantity": 15,
+  "thumbnailUrl": "/images/products/prod001.jpg"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Products created successfully",
+  "data": {
+    "categoryId": "CAT001",
+    "productId": "PROD001",
+    "productName": "Dell Inspiron 15",
+    "price": 55000,
+    "availableQuantity": 15,
+    "thumbnailUrl": "/images/products/prod001.jpg",
+    "status": true,
+    "createdBy": "CUST001",
+    "createdAt": "2026-06-22T10:00:00Z",
+    "updatedBy": "CUST001",
+    "updatedAt": "2026-06-22T10:00:00Z",
+  }
+}
+```
+
+## PUT /products
+
+### Endpoint
+
+```http
+POST /products/{productId}
+```
+
+### Request
+```json
+{
+  "productName": "Dell Inspiron 15",
+  "categoryId": "CAT001",
+  "description": "15 inch laptop with Intel i7 processor",
+  "price": 55000,
+  "availableQuantity": 15,
+  "thumbnailUrl": "/images/products/prod001.jpg"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Products updated successfully",
+  "data": {
+    "categoryId": "CAT001",
+    "productId": "PROD001",
+    "productName": "Dell Inspiron 15",
+    "price": 55000,
+    "availableQuantity": 15,
+    "thumbnailUrl": "/images/products/prod001.jpg",
+    "status": true,
+    "createdBy": "CUST001",
+    "createdAt": "2026-06-22T10:00:00Z",
+    "updatedBy": "CUST001",
+    "updatedAt": "2026-06-22T10:00:00Z",
+  }
+}
+```
+
 ## Search Products
 
 ### Endpoint
@@ -290,7 +374,6 @@ GET /products/category/{categoryId}
   "price": 55000,
   "availableQuantity": 15,
   "thumbnailUrl": "/images/products/prod001.jpg",
-  "imageUrls": [],
   "status": true,
   "createdBy": "SYSTEM",
   "createdAt": "2026-06-22T10:00:00Z",
