@@ -2,6 +2,8 @@ package com.onlinemart.product.service;
 
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
+import com.onlinemart.product.dto.response.AvailabilityResponseDto;
+import com.onlinemart.product.dto.response.AvailabilityDataDto;
 import com.onlinemart.product.dto.response.ErrorResponseDto;
 import com.onlinemart.product.entity.Product;
 import com.onlinemart.product.exception.ProductServiceException;
@@ -98,6 +100,44 @@ public class ProductServiceImpl implements ProductService {
                     .success(false)
                     .message("Failed to fetch product")
                     .errorCode("PRODUCT_FETCH_ERROR")
+                    .build();
+            throw new ProductServiceException(error);
+        }
+    }
+
+    @Override
+    public AvailabilityResponseDto checkAvailability(Long productId) {
+        try {
+            return productRepository.findById(productId)
+                    .map(product -> {
+                        Long qty = product.getAvailableStpockQuantity() != null ? product.getAvailableStpockQuantity() : 0L;
+                        AvailabilityDataDto data = AvailabilityDataDto.builder()
+                                .productId(product.getId())
+                                .isAvailable(qty > 0)
+                                .availableQuantity(qty)
+                                .build();
+
+                        return AvailabilityResponseDto.builder()
+                                .success(true)
+                                .message("Inventory fetched successfully")
+                                .data(data)
+                                .build();
+                    })
+                    .orElseThrow(() -> {
+                        ErrorResponseDto error = ErrorResponseDto.builder()
+                                .success(false)
+                                .message("Product not found for id: " + productId)
+                                .errorCode("PRODUCT_NOT_FOUND")
+                                .build();
+                        return new ProductServiceException(error);
+                    });
+        } catch (ProductServiceException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            ErrorResponseDto error = ErrorResponseDto.builder()
+                    .success(false)
+                    .message("Failed to check availability")
+                    .errorCode("PRODUCT_AVAILABILITY_CHECK_FAILED")
                     .build();
             throw new ProductServiceException(error);
         }

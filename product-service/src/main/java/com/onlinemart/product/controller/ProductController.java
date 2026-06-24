@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/products")
+@Tag(name = "Product", description = "Operations related to products in the online mart")
 public class ProductController {
 
     private final ProductService productService;
@@ -74,6 +76,20 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDto> fetchProduct(@PathVariable Long id) {
         ProductResponseDto response = productService.fetchProduct(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Check product availability", description = "Returns inventory availability for a product")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Inventory fetched",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.onlinemart.product.dto.response.AvailabilityResponseDto.class))),
+            @ApiResponse(responseCode = "404", description = "Product Not Found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class)))})
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<com.onlinemart.product.dto.response.AvailabilityResponseDto> checkAvailability(@PathVariable Long id) {
+        com.onlinemart.product.dto.response.AvailabilityResponseDto response = productService.checkAvailability(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

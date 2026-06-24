@@ -2,8 +2,11 @@ package com.onlinemart.product.mapper;
 
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
+import com.onlinemart.product.dto.response.ProductDataDto;
 import com.onlinemart.product.entity.Product;
 import org.springframework.stereotype.Component;
+
+
 
 @Component
 public class ProductMapper {
@@ -26,10 +29,9 @@ public class ProductMapper {
 
     public ProductResponseDto toSaveResponseDto(Product product) {
         if (product == null) return null;
-        return ProductResponseDto.builder()
-                .id(product.getId())
-                .productId(product.getId())
-                .categoryId(product.getCategoryId())
+        ProductDataDto data = ProductDataDto.builder()
+                .categoryId(product.getCategoryId() != null ? String.valueOf(product.getCategoryId()) : null)
+                .productId(product.getId() != null ? String.valueOf(product.getId()) : null)
                 .productName(product.getName())
                 .price(product.getPrice())
                 .availableQuantity(product.getAvailableStpockQuantity())
@@ -39,6 +41,12 @@ public class ProductMapper {
                 .createdAt(product.getCreatedAt())
                 .updatedBy(product.getUpdatedBy())
                 .updatedAt(product.getUpdatedAt())
+                .build();
+
+        return ProductResponseDto.builder()
+                .success(true)
+                .message("Products created successfully")
+                .data(data)
                 .build();
     }
 

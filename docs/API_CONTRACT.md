@@ -283,7 +283,7 @@ GET /products/{productId}/availability
   "message": "Inventory fetched successfully",
   "data": {
     "productId": "PROD001",
-    "available": true,
+    "isAvailable": true,
     "availableQuantity": 15
   }
 }
@@ -493,7 +493,7 @@ POST /carts/{cartId}/items
 ```json
 {
   "success": true,
-  "message": "Itme added to cart successfully",
+  "message": "Item added to cart successfully",
   "data": {
     "cartId": "CART001",
     "customerId": "CUST001",
@@ -504,15 +504,14 @@ POST /carts/{cartId}/items
         "itemId": "ITEM001",
         "productId": "PROD001",
         "quantity": 2,
-        "unitPrice": 1200,
-        "totalPrice": 2400
+        "unitPrice": 1200
       }
     ],
     "cartTotal": 2400,
     "createdBy": "CUST001",
     "createdAt": "2026-06-22T10:00:00Z",
     "updatedBy": "CUST001",
-    "updatedAt": "2026-06-22T10:00:00Z",
+    "updatedAt": "2026-06-22T10:00:00Z"
   }
 }
 ```

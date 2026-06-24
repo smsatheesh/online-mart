@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Standard API response wrapper for product operations")
-public class ProductResponseDto {
+public class AvailabilityResponseDto {
 
     @Schema(description = "Indicates operation success", example = "true")
     private boolean success;
@@ -20,6 +20,6 @@ public class ProductResponseDto {
     private String message;
 
     @Schema(description = "Payload containing product details")
-    private ProductDataDto data;
+    private AvailabilityDataDto data;
 
 }
