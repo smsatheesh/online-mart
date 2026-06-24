@@ -652,13 +652,7 @@ POST /orders
       "quantity": 2,
       "unitPrice": 1200
     }
-  ],
-  "shippingAddress": {
-    "line1": "123 Main Street",
-    "city": "Bangalore",
-    "state": "Karnataka",
-    "postalCode": "560001"
-  }
+  ]
 }
 ```
 
@@ -673,12 +667,6 @@ POST /orders
     "customerId": "CUST001",
     "cartId": "CART001",
     "status": "PLACED",
-    "shippingAddress": {
-      "line1": "123 Main Street",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "postalCode": "560001"
-    },
     "items": [
       {
         "itemId": "ITEM001",
@@ -717,12 +705,6 @@ GET /orders/{orderId}
     "customerId": "CUST001",
     "cartId": "CART001",
     "status": "PLACED",
-    "shippingAddress": {
-      "line1": "123 Main Street",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "postalCode": "560001"
-    },
     "items": [
       {
         "itemId": "ITEM001",
@@ -742,7 +724,7 @@ GET /orders/{orderId}
 
 ---
 
-## Get Customer Orders
+## Get Customer Order
 
 ### Endpoint
 
@@ -835,14 +817,14 @@ GET /orders/{orderId}/status
 ### Endpoint
 
 ```http
-PATCH /orders/{orderId}/cancel
+PATCH /orders/{orderId}/status
 ```
 
 ### Request
 
 ```json
 {
-  "reason": "Customer Requested"
+  "status": "CANCELLED"
 }
 ```
 
