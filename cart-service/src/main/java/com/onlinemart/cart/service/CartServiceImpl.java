@@ -21,6 +21,7 @@ import com.onlinemart.cart.client.dto.ProductResponseDto;
 import com.onlinemart.cart.client.dto.ProductDataDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -51,7 +52,7 @@ public class CartServiceImpl implements CartService {
             throw ex;
         } catch (Exception ex) {
             ErrorResponseDto error = ErrorResponseDto.builder()
-                    .success(false)
+                    .success(Boolean.FALSE)
                     .message("Failed to save cart")
                     .errorCode("CART_SAVE_ERROR")
                     .build();
@@ -66,7 +67,7 @@ public class CartServiceImpl implements CartService {
                     .map(cartMapper::toDetailResponse)
                     .orElseThrow(() -> {
                         ErrorResponseDto error = ErrorResponseDto.builder()
-                                .success(false)
+                                .success(Boolean.FALSE)
                                 .message("Cart not found for customer: " + customerId)
                                 .errorCode("CART_NOT_FOUND")
                                 .build();
@@ -74,7 +75,7 @@ public class CartServiceImpl implements CartService {
                     });
         } catch (Exception ex) {
             ErrorResponseDto error = ErrorResponseDto.builder()
-                    .success(false)
+                    .success(Boolean.FALSE)
                     .message("Failed to fetch cart")
                     .errorCode("CART_FETCH_FAILED")
                     .build();
@@ -167,9 +168,85 @@ public class CartServiceImpl implements CartService {
             throw ex;
         } catch (Exception ex) {
             ErrorResponseDto error = ErrorResponseDto.builder()
-                    .success(false)
+                    .success(Boolean.FALSE)
                     .message("Failed to update cart items")
                     .errorCode("CART_ITEM_UPDATE_FAILED")
+                    .build();
+            throw new CartServiceException(error);
+        }
+    }
+
+    @Override
+    public void removeCartItem(Long cartId, Long itemId) {
+        try {
+            cartRepository.findById(cartId)
+                    .orElseThrow(
+                            () -> buildException("Cart not found for id: " + cartId, "CART_NOT_FOUND"));
+
+            CartItems cartItem = cartItemRepository.findById(itemId)
+                    .orElseThrow(
+                            () -> buildException("Cart Item not found for id: " + itemId, "CART_ITEM_NOT_FOUND"));
+
+            cartItemRepository.delete(cartItem);
+
+        } catch (CartServiceException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error in removeCartItem: {}", ex.getMessage(), ex);
+            ErrorResponseDto error = ErrorResponseDto.builder()
+                    .success(Boolean.FALSE)
+                    .message("Failed to remove cart item")
+                    .errorCode("CART_ITEM_REMOVE_FAILED")
+                    .build();
+            throw new CartServiceException(error);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void clearCartItems(Long cartId) {
+        try {
+            Cart cart = cartRepository.findById(cartId)
+                    .orElseThrow(
+                            () -> buildException("Cart not found for id: " + cartId, "CART_NOT_FOUND")
+                    );
+
+            cartItemRepository.deleteAllByCartId(cartId);
+
+        } catch (CartServiceException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error in clearCartItems: {}", ex.getMessage(), ex);
+            ErrorResponseDto error = ErrorResponseDto.builder()
+                    .success(Boolean.FALSE)
+                    .message("Failed to clear cart items")
+                    .errorCode("CART_ITEMS_CLEAR_FAILED")
+                    .build();
+            throw new CartServiceException(error);
+        }
+    }
+
+    @Override
+    public CartResponseDto fetchCartAndDetails(Long cartId) {
+        try {
+            Cart cart = cartRepository.findById(cartId)
+                    .orElseThrow(
+                            () -> buildException("Cart not found for id: " + cartId, "CART_NOT_FOUND")
+                    );
+
+            CartDataDto data = fetchAllItems(cartId, cart);
+            return CartResponseDto.builder()
+                    .success(Boolean.TRUE)
+                    .message("Cart and details fetched successfully")
+                    .data(data)
+                    .build();
+        } catch (CartServiceException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            ErrorResponseDto error = ErrorResponseDto.builder()
+                    .success(Boolean.FALSE)
+                    .message("Failed to fetch cart and details")
+                    .errorCode("CART_FETCH_FAILED")
                     .build();
             throw new CartServiceException(error);
         }
@@ -208,7 +285,7 @@ public class CartServiceImpl implements CartService {
 
     private CartServiceException buildException(String message, String errorCode) {
         ErrorResponseDto error = ErrorResponseDto.builder()
-                .success(false)
+                .success(Boolean.FALSE)
                 .message(message)
                 .errorCode(errorCode)
                 .build();
