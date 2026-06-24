@@ -20,9 +20,9 @@ public class CartItemsDataDto {
     private Long productId;
 
     @Schema(description = "Quantity of the product in the cart", example = "13")
-    private Integer quantity;
+    private Long quantity;
 
     @Schema(description = "Unit price of the product in the cart", example = "100")
-    private Integer unitPrice;
+    private Long unitPrice;
 
 }

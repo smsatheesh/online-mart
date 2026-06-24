@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onlinemart.cart.dto.request.CreateCartRequestDto;
+import com.onlinemart.cart.dto.request.UpdateCartItemRequestDto;
+import com.onlinemart.cart.dto.request.CreateCartItemRequestDto;
 import com.onlinemart.cart.dto.response.CartResponseDto;
 import com.onlinemart.cart.dto.response.CartDetailResponseDto;
 import com.onlinemart.cart.dto.response.ErrorResponseDto;
@@ -66,5 +69,39 @@ public class CartController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @Operation(summary = "Add an item to a cart", description = "Adds an item to the specified cart and returns updated cart payload")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Item added",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = CartResponseDto.class))),
+            @ApiResponse(responseCode = "404", description = "Cart or Product Not Found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class)))})
+    @PostMapping("/{cartId}/items")
+    public ResponseEntity<CartResponseDto> addItemToCart(@PathVariable Long cartId,
+                                                         @RequestBody CreateCartItemRequestDto request) {
+        // ensure path cartId is set on request DTO
+        request.setCartId(cartId);
+        CartResponseDto response = cartService.saveCartItems(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "Update an item quantity in the cart", description = "Updates an item to the specified product in the cart items")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Item updated",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = CartResponseDto.class))),
+            @ApiResponse(responseCode = "404", description = "Cart or Product Not Found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class)))})
+    @PutMapping("/{cartId}/items/{itemId}")
+    public ResponseEntity<CartResponseDto> updateItemInCart(@PathVariable Long cartId,
+                                                            @PathVariable Long itemId,
+                                                            @RequestBody UpdateCartItemRequestDto request) {
+        request.setCartId(cartId);
+        request.setItemId(itemId);
+        CartResponseDto response = cartService.updateCartItems(request);
+        return ResponseEntity.ok(response);
+    }
 
 }

@@ -22,9 +22,9 @@ public class CartItems extends BaseAuditEntity {
     private Long productId;
 
     @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    private Long quantity;
 
     @Column(name = "unit_price", nullable = false)
-    private Integer unitPrice;
+    private Long unitPrice;
 
 }
