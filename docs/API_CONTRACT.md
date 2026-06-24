@@ -309,7 +309,6 @@ GET /products/category
     {
       "categoryId": "CAT001",
       "categoryName": "Laptop",
-      "description": "Laptop and notebook computers",
       "status": true,
       "createdBy": "SYSTEM",
       "createdAt": "2026-06-22T10:00:00Z",
@@ -319,7 +318,6 @@ GET /products/category
     {
       "categoryId": "CAT002",
       "categoryName": "Mobile",
-      "description": "Appliances items",
       "status": true,
       "createdBy": "SYSTEM",
       "createdAt": "2026-06-22T10:00:00Z",
@@ -349,7 +347,6 @@ GET /products/category/{categoryId}
   "data": {
     "categoryId": "CAT001",
     "categoryName": "Laptop",
-    "description": "Laptop and notebook computers",
     "status": true,
     "createdBy": "SYSTEM",
     "createdAt": "2026-06-22T10:00:00Z",

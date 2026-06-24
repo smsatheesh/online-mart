@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Getter
 @SuperBuilder
-@Schema(description = "Response returned after creating a product")
-public class SaveProductResponseDto extends AuditResponseDto {
+@Schema(description = "Response returned after fetching details of the product")
+public class ProductResponseDto extends AuditResponseDto {
 
     @Schema(description = "Internal database id", example = "100")
     private Long id;
@@ -32,4 +32,5 @@ public class SaveProductResponseDto extends AuditResponseDto {
 
     @Schema(description = "Status of the product (active/inactive)", example = "true")
     private Boolean status;
+
 }

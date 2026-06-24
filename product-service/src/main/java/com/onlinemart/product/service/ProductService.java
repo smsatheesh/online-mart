@@ -1,10 +1,11 @@
 package com.onlinemart.product.service;
 
-import com.onlinemart.product.dto.request.SaveProductRequestDto;
-import com.onlinemart.product.dto.response.SaveProductResponseDto;
+import com.onlinemart.product.dto.request.ProductRequestDto;
+import com.onlinemart.product.dto.response.ProductResponseDto;
 
 public interface ProductService {
 
-    SaveProductResponseDto saveProduct(SaveProductRequestDto requestDto);
+    ProductResponseDto saveProduct(ProductRequestDto requestDto);
 
+    ProductResponseDto fetchProduct(Long id);
 }
