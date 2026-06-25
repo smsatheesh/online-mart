@@ -783,36 +783,7 @@ POST /orders/customer/{customerId}
 
 ---
 
-## Track Order Status
-
-### Endpoint
-
-```http
-GET /orders/{orderId}/status
-```
-
-### Response
-
-```json
-{
-  "success": true,
-  "message": "Order status fetched successfully",
-  "data": {
-    "orderId": "ORD001",
-    "customerId": "CUST001",
-    "cartId": "CART001",
-    "status": "SHIPPED",
-    "createdBy": "CUST001",
-    "createdAt": "2026-06-22T10:00:00Z",
-    "updatedBy": "CUST001",
-    "updatedAt": "2026-06-22T10:00:00Z",
-  }
-}
-```
-
----
-
-## Cancel Order
+## Update Order Status
 
 ### Endpoint
 

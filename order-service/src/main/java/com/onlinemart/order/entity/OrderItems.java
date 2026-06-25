@@ -22,4 +22,7 @@ public class OrderItems extends BaseAuditEntity {
     @Column(name = "quantity", nullable = false)
     private Long quantity;
 
+    @Column(name = "unit_price", nullable = false)
+    private Long unitPrice;
+
 }
