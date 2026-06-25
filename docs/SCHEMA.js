@@ -16,7 +16,7 @@ const PRODUCT = {
   description: "string",
   price: "integer",
   stock_quantity: "integer",
-  thumbnailUrl: "string",
+  thumbnail_url: "string",
   status: "boolean",
 
   created_by: "string",

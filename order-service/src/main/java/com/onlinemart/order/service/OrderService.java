@@ -1,0 +1,16 @@
+package com.onlinemart.order.service;
+
+import com.onlinemart.order.dto.request.CreateOrderRequestDto;
+import com.onlinemart.order.dto.response.OrderResponseDto;
+import com.onlinemart.order.dto.response.OrderDetailResponseDto;
+import com.onlinemart.order.dto.request.OrderStatusRequestDto;
+
+public interface OrderService {
+
+    OrderResponseDto saveOrder(CreateOrderRequestDto requestDto);
+
+    OrderDetailResponseDto fetchOrderDetails(Long orderId);
+
+    OrderDetailResponseDto updateStatusOfOrder(OrderStatusRequestDto requestDto);
+
+}

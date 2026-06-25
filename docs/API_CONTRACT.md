@@ -87,6 +87,90 @@ Responsible for product discovery, product details, category filtering, and inve
 
 ---
 
+## POST /products
+
+### Endpoint
+
+```http
+POST /products
+```
+
+### Request
+```json
+{
+  "productName": "Dell Inspiron 15",
+  "categoryId": "CAT001",
+  "description": "15 inch laptop with Intel i7 processor",
+  "price": 55000,
+  "availableQuantity": 15,
+  "thumbnailUrl": "/images/products/prod001.jpg"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Products created successfully",
+  "data": {
+    "categoryId": "CAT001",
+    "productId": "PROD001",
+    "productName": "Dell Inspiron 15",
+    "price": 55000,
+    "availableQuantity": 15,
+    "thumbnailUrl": "/images/products/prod001.jpg",
+    "status": true,
+    "createdBy": "CUST001",
+    "createdAt": "2026-06-22T10:00:00Z",
+    "updatedBy": "CUST001",
+    "updatedAt": "2026-06-22T10:00:00Z",
+  }
+}
+```
+
+## PUT /products
+
+### Endpoint
+
+```http
+POST /products/{productId}
+```
+
+### Request
+```json
+{
+  "productName": "Dell Inspiron 15",
+  "categoryId": "CAT001",
+  "description": "15 inch laptop with Intel i7 processor",
+  "price": 55000,
+  "availableQuantity": 15,
+  "thumbnailUrl": "/images/products/prod001.jpg"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Products updated successfully",
+  "data": {
+    "categoryId": "CAT001",
+    "productId": "PROD001",
+    "productName": "Dell Inspiron 15",
+    "price": 55000,
+    "availableQuantity": 15,
+    "thumbnailUrl": "/images/products/prod001.jpg",
+    "status": true,
+    "createdBy": "CUST001",
+    "createdAt": "2026-06-22T10:00:00Z",
+    "updatedBy": "CUST001",
+    "updatedAt": "2026-06-22T10:00:00Z",
+  }
+}
+```
+
 ## Search Products
 
 ### Endpoint
@@ -199,7 +283,7 @@ GET /products/{productId}/availability
   "message": "Inventory fetched successfully",
   "data": {
     "productId": "PROD001",
-    "available": true,
+    "isAvailable": true,
     "availableQuantity": 15
   }
 }
@@ -225,7 +309,6 @@ GET /products/category
     {
       "categoryId": "CAT001",
       "categoryName": "Laptop",
-      "description": "Laptop and notebook computers",
       "status": true,
       "createdBy": "SYSTEM",
       "createdAt": "2026-06-22T10:00:00Z",
@@ -235,7 +318,6 @@ GET /products/category
     {
       "categoryId": "CAT002",
       "categoryName": "Mobile",
-      "description": "Appliances items",
       "status": true,
       "createdBy": "SYSTEM",
       "createdAt": "2026-06-22T10:00:00Z",
@@ -265,7 +347,6 @@ GET /products/category/{categoryId}
   "data": {
     "categoryId": "CAT001",
     "categoryName": "Laptop",
-    "description": "Laptop and notebook computers",
     "status": true,
     "createdBy": "SYSTEM",
     "createdAt": "2026-06-22T10:00:00Z",
@@ -290,7 +371,6 @@ GET /products/category/{categoryId}
   "price": 55000,
   "availableQuantity": 15,
   "thumbnailUrl": "/images/products/prod001.jpg",
-  "imageUrls": [],
   "status": true,
   "createdBy": "SYSTEM",
   "createdAt": "2026-06-22T10:00:00Z",
@@ -413,7 +493,7 @@ POST /carts/{cartId}/items
 ```json
 {
   "success": true,
-  "message": "Itme added to cart successfully",
+  "message": "Item added to cart successfully",
   "data": {
     "cartId": "CART001",
     "customerId": "CUST001",
@@ -424,15 +504,14 @@ POST /carts/{cartId}/items
         "itemId": "ITEM001",
         "productId": "PROD001",
         "quantity": 2,
-        "unitPrice": 1200,
-        "totalPrice": 2400
+        "unitPrice": 1200
       }
     ],
     "cartTotal": 2400,
     "createdBy": "CUST001",
     "createdAt": "2026-06-22T10:00:00Z",
     "updatedBy": "CUST001",
-    "updatedAt": "2026-06-22T10:00:00Z",
+    "updatedAt": "2026-06-22T10:00:00Z"
   }
 }
 ```
@@ -573,13 +652,7 @@ POST /orders
       "quantity": 2,
       "unitPrice": 1200
     }
-  ],
-  "shippingAddress": {
-    "line1": "123 Main Street",
-    "city": "Bangalore",
-    "state": "Karnataka",
-    "postalCode": "560001"
-  }
+  ]
 }
 ```
 
@@ -594,12 +667,6 @@ POST /orders
     "customerId": "CUST001",
     "cartId": "CART001",
     "status": "PLACED",
-    "shippingAddress": {
-      "line1": "123 Main Street",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "postalCode": "560001"
-    },
     "items": [
       {
         "itemId": "ITEM001",
@@ -638,12 +705,6 @@ GET /orders/{orderId}
     "customerId": "CUST001",
     "cartId": "CART001",
     "status": "PLACED",
-    "shippingAddress": {
-      "line1": "123 Main Street",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "postalCode": "560001"
-    },
     "items": [
       {
         "itemId": "ITEM001",
@@ -663,7 +724,7 @@ GET /orders/{orderId}
 
 ---
 
-## Get Customer Orders
+## Get Customer Order
 
 ### Endpoint
 
@@ -722,48 +783,19 @@ POST /orders/customer/{customerId}
 
 ---
 
-## Track Order Status
+## Update Order Status
 
 ### Endpoint
 
 ```http
-GET /orders/{orderId}/status
-```
-
-### Response
-
-```json
-{
-  "success": true,
-  "message": "Order status fetched successfully",
-  "data": {
-    "orderId": "ORD001",
-    "customerId": "CUST001",
-    "cartId": "CART001",
-    "status": "SHIPPED",
-    "createdBy": "CUST001",
-    "createdAt": "2026-06-22T10:00:00Z",
-    "updatedBy": "CUST001",
-    "updatedAt": "2026-06-22T10:00:00Z",
-  }
-}
-```
-
----
-
-## Cancel Order
-
-### Endpoint
-
-```http
-PATCH /orders/{orderId}/cancel
+PATCH /orders/{orderId}/status
 ```
 
 ### Request
 
 ```json
 {
-  "reason": "Customer Requested"
+  "status": "CANCELLED"
 }
 ```
 
