@@ -15,6 +15,12 @@ public class KafkaTopicConfig {
     @Value("${spring.kafka.topic.order.cancelled}")
     private String orderTopicCancelled;
 
+    @Value("${spring.kafka.topic.inventory.reserved}")
+    private String inventoryTopicReserved;
+
+    @Value("${spring.kafka.topic.inventory.failed}")
+    private String inventoryTopicFailed;
+
     @Bean
     public NewTopic orderCreatedTopic() {
         return TopicBuilder.name(orderTopicCreated)
@@ -26,6 +32,22 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic orderCancelledtopic() {
         return TopicBuilder.name(orderTopicCancelled)
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic inventoryReservedTopic() {
+        return TopicBuilder.name(inventoryTopicReserved)
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic invenotryFailedTopic() {
+        return TopicBuilder.name(inventoryTopicFailed)
                 .partitions(1)
                 .replicas(1)
                 .build();

@@ -5,6 +5,9 @@ import com.onlinemart.cart.dto.request.CreateCartItemRequestDto;
 import com.onlinemart.cart.dto.request.UpdateCartItemRequestDto;
 import com.onlinemart.cart.dto.response.CartResponseDto;
 import com.onlinemart.cart.dto.response.CartDetailResponseDto;
+import com.onlinemart.cart.event.CancelledOrderItemEvent;
+
+import java.util.List;
 
 public interface CartService {
 
@@ -21,4 +24,7 @@ public interface CartService {
     void clearCartItems(Long cartId);
 
     CartResponseDto fetchCartAndDetails(Long cartId);
+
+    void restoreCart(Long cartId, List<CancelledOrderItemEvent> items);
+
 }

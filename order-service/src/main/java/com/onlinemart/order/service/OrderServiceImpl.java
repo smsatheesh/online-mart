@@ -28,6 +28,7 @@ import com.onlinemart.order.repository.OrderRepository;
 import com.onlinemart.order.exception.OrderServiceException;
 import com.onlinemart.order.client.CartClientService;
 import com.onlinemart.order.client.dto.response.CartItemsDataDto;
+import com.onlinemart.order.event.CancelledOrderItemEvent;
 
 @Slf4j
 @Service
@@ -105,7 +106,11 @@ public class OrderServiceImpl implements OrderService {
 
             orderEventPublisher.publishOrderCreated(event);
 
-            return orderMapper.toSaveResponseDto(savedOrder, orderItems);
+            return OrderResponseDto.builder()
+                    .success(Boolean.TRUE)
+                    .message("Order received and is being processed")
+                    .data(orderMapper.toSaveResponseDto(savedOrder, orderItems).getData())
+                    .build();
 
         } catch (OrderServiceException ex) {
             throw ex;
@@ -175,6 +180,16 @@ public class OrderServiceImpl implements OrderService {
                     .build();
             throw new OrderServiceException(error);
         }
+    }
+
+    @Override
+    public List<CancelledOrderItemEvent> getOrderItems(Long orderId) {
+        return orderItemRepository.findByOrderId(orderId).stream()
+                .map(item -> new CancelledOrderItemEvent(
+                        item.getProductId(),
+                        item.getQuantity(),
+                        item.getUnitPrice()))
+                .toList();
     }
 
     private OrderDto fetchOrder(Order order) {

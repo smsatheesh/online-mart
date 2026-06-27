@@ -1,4 +1,4 @@
-package com.onlinemart.order.config;
+package com.onlinemart.product.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
