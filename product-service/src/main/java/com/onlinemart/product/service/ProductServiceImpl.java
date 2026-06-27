@@ -10,6 +10,7 @@ import com.onlinemart.product.exception.ProductServiceException;
 import com.onlinemart.product.mapper.ProductMapper;
 import com.onlinemart.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -45,7 +46,7 @@ public class ProductServiceImpl implements ProductService {
                                 existing.setPrice(requestDto.getPrice());
                             }
                             if (requestDto.getAvailableQuantity() != null) {
-                                existing.setAvailableStpockQuantity(requestDto.getAvailableQuantity());
+                                existing.setAvailableStockQuantity(requestDto.getAvailableQuantity());
                             }
                             if (requestDto.getThumbnailUrl() != null) {
                                 existing.setThumbnailUrl(requestDto.getThumbnailUrl());
@@ -110,7 +111,7 @@ public class ProductServiceImpl implements ProductService {
         try {
             return productRepository.findById(productId)
                     .map(product -> {
-                        Long qty = product.getAvailableStpockQuantity() != null ? product.getAvailableStpockQuantity() : 0L;
+                        Long qty = product.getAvailableStockQuantity() != null ? product.getAvailableStockQuantity() : 0L;
                         AvailabilityDataDto data = AvailabilityDataDto.builder()
                                 .productId(product.getId())
                                 .isAvailable(qty > 0)
@@ -141,6 +142,32 @@ public class ProductServiceImpl implements ProductService {
                     .build();
             throw new ProductServiceException(error);
         }
+    }
+
+    @Override
+    @Transactional
+    public void deductStock(Long productId, Long quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    ErrorResponseDto error = ErrorResponseDto.builder()
+                            .success(false)
+                            .message("Product not found for id: " + productId)
+                            .errorCode("PRODUCT_NOT_FOUND")
+                            .build();
+                    return new ProductServiceException(error);
+                });
+
+        if (product.getAvailableStockQuantity() < quantity) {
+            ErrorResponseDto error = ErrorResponseDto.builder()
+                    .success(false)
+                    .message("Insufficient stock for productId: " + productId)
+                    .errorCode("INSUFFICIENT_STOCK")
+                    .build();
+            throw new ProductServiceException(error);
+        }
+
+        product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
+        productRepository.save(product);
     }
 
 }

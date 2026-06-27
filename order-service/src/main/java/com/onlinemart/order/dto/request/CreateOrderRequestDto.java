@@ -22,9 +22,9 @@ public class CreateOrderRequestDto {
     @Schema(description = "Cart Identifier", example = "1")
     private Long customerId;
 
-    @NotNull
-    @Valid
-    @Schema(description = "Order items")
-    private List<OrderItemsDataDto> items;
+//    @NotNull
+//    @Valid
+//    @Schema(description = "Order items")
+//    private List<OrderItemsDataDto> items;
 
 }

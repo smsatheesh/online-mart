@@ -1,14 +1,12 @@
 package com.onlinemart.order.client.dto.response;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

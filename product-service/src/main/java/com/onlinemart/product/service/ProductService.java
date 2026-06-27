@@ -12,4 +12,6 @@ public interface ProductService {
 
     AvailabilityResponseDto checkAvailability(Long productId);
 
+    void deductStock(Long productId, Long quantity);
+
 }

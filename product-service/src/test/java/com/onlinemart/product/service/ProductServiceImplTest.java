@@ -74,7 +74,7 @@ class ProductServiceImplTest {
         sampleProduct.setName("Wireless Mouse");
         sampleProduct.setDescription("A good mouse");
         sampleProduct.setPrice(1999L);                       // Long, NOT BigDecimal
-        sampleProduct.setAvailableStpockQuantity(50L);
+        sampleProduct.setAvailableStockQuantity(50L);
         sampleProduct.setThumbnailUrl("https://example.com/mouse.png");
         sampleProduct.setStatus(Boolean.TRUE);
 
@@ -255,7 +255,7 @@ class ProductServiceImplTest {
             assertThat(sampleProduct.getName()).isEqualTo("Updated Mouse");
             assertThat(sampleProduct.getDescription()).isEqualTo("Updated desc");
             assertThat(sampleProduct.getPrice()).isEqualTo(2999L);           // Long comparison
-            assertThat(sampleProduct.getAvailableStpockQuantity()).isEqualTo(100L);
+            assertThat(sampleProduct.getAvailableStockQuantity()).isEqualTo(100L);
             assertThat(sampleProduct.getThumbnailUrl()).isEqualTo("https://example.com/new.png");
 
             verify(productRepository).findById(1L);
@@ -272,7 +272,7 @@ class ProductServiceImplTest {
             // Snapshot original values before update
             String originalName = sampleProduct.getName();
             String originalDesc = sampleProduct.getDescription();
-            Long originalQty = sampleProduct.getAvailableStpockQuantity();
+            Long originalQty = sampleProduct.getAvailableStockQuantity();
             Long originalCatId = sampleProduct.getCategoryId();
             String originalThumb = sampleProduct.getThumbnailUrl();
 
@@ -293,7 +293,7 @@ class ProductServiceImplTest {
             // Everything else must be unchanged (null-guard branches skipped)
             assertThat(sampleProduct.getName()).isEqualTo(originalName);
             assertThat(sampleProduct.getDescription()).isEqualTo(originalDesc);
-            assertThat(sampleProduct.getAvailableStpockQuantity()).isEqualTo(originalQty);
+            assertThat(sampleProduct.getAvailableStockQuantity()).isEqualTo(originalQty);
             assertThat(sampleProduct.getCategoryId()).isEqualTo(originalCatId);
             assertThat(sampleProduct.getThumbnailUrl()).isEqualTo(originalThumb);
 
@@ -555,7 +555,7 @@ class ProductServiceImplTest {
         void checkAvailability_inStock_returnsTrue() {
             log.info("▶ TEST: checkAvailability_inStock_returnsTrue");
 
-            sampleProduct.setAvailableStpockQuantity(10L);
+            sampleProduct.setAvailableStockQuantity(10L);
             when(productRepository.findById(1L)).thenReturn(Optional.of(sampleProduct));
 
             AvailabilityResponseDto result = productService.checkAvailability(1L);
@@ -578,7 +578,7 @@ class ProductServiceImplTest {
         void checkAvailability_zeroStock_returnsFalse() {
             log.info("▶ TEST: checkAvailability_zeroStock_returnsFalse");
 
-            sampleProduct.setAvailableStpockQuantity(0L);
+            sampleProduct.setAvailableStockQuantity(0L);
             when(productRepository.findById(1L)).thenReturn(Optional.of(sampleProduct));
 
             AvailabilityResponseDto result = productService.checkAvailability(1L);
@@ -595,8 +595,8 @@ class ProductServiceImplTest {
         void checkAvailability_nullQuantity_treatedAsZero() {
             log.info("▶ TEST: checkAvailability_nullQuantity_treatedAsZero");
 
-            // Edge case: the service does: qty = availableStpockQuantity != null ? qty : 0L
-            sampleProduct.setAvailableStpockQuantity(null);
+            // Edge case: the service does: qty = availableStockQuantity != null ? qty : 0L
+            sampleProduct.setAvailableStockQuantity(null);
             when(productRepository.findById(1L)).thenReturn(Optional.of(sampleProduct));
 
             AvailabilityResponseDto result = productService.checkAvailability(1L);
