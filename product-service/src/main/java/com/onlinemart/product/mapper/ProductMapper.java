@@ -21,7 +21,7 @@ public class ProductMapper {
         p.setName(dto.getProductName());
         p.setDescription(dto.getDescription() == null ? "" : dto.getDescription());
         p.setPrice(dto.getPrice());
-        p.setAvailableStpockQuantity(dto.getAvailableQuantity());
+        p.setAvailableStockQuantity(dto.getAvailableQuantity());
         p.setThumbnailUrl(dto.getThumbnailUrl());
         p.setStatus(Boolean.TRUE);
         return p;
@@ -34,7 +34,7 @@ public class ProductMapper {
                 .productId(product.getId() != null ? String.valueOf(product.getId()) : null)
                 .productName(product.getName())
                 .price(product.getPrice())
-                .availableQuantity(product.getAvailableStpockQuantity())
+                .availableQuantity(product.getAvailableStockQuantity())
                 .thumbnailUrl(product.getThumbnailUrl())
                 .status(product.getStatus())
                 .createdBy(product.getCreatedBy())

@@ -29,7 +29,7 @@ public class Product extends BaseAuditEntity {
     private Long price;
 
     @Column(name = "stock_quantity", nullable = false)
-    private Long availableStpockQuantity;
+    private Long availableStockQuantity;
 
     @Column(name = "thumbnail_url", nullable = false)
     private String thumbnailUrl;
