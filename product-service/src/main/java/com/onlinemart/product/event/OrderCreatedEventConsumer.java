@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.onlinemart.product.event.*;
 import com.onlinemart.product.service.*;
@@ -19,9 +20,9 @@ public class OrderCreatedEventConsumer {
         this.productService = productService;
     }
 
-    @KafkaListener(topics = "order.created", groupId = "product-service-group")
+    @KafkaListener(topics = "${spring.kafka.topic.order.created}", groupId = "${spring.kafka.consumer.group-id}")
     public void handleOrderCreated(OrderCreatedEvent event) {
-        log.info("Received order.created for orderId={}", event.getOrderId());
+        log.info("Received {} for orderId={}", "${spring.kafka.topic.order.created}", event.getOrderId());
 
         event.getItems().forEach(item -> {
             try {
