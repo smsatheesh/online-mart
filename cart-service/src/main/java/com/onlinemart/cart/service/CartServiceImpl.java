@@ -260,7 +260,7 @@ public class CartServiceImpl implements CartService {
             boolean exists = cartItemRepository.existsByCartIdAndProductId(
                     cartId, item.getProductId());
             if (!exists) {
-                CartItem cartItem = new CartItem();
+                CartItems cartItem = new CartItems();
                 cartItem.setCartId(cartId);
                 cartItem.setProductId(item.getProductId());
                 cartItem.setQuantity(item.getQuantity());
@@ -269,7 +269,7 @@ public class CartServiceImpl implements CartService {
                 log.info("Restored cartItem productId={} qty={} to cartId={}",
                         item.getProductId(), item.getQuantity(), cartId);
             } else {
-                log.warn("CartItem already exists for cartId={} productId={} — skipping restore",
+                log.warn("CartItems already exists for cartId={} productId={} — skipping restore",
                         cartId, item.getProductId());
             }
         });
