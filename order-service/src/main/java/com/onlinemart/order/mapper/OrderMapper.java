@@ -26,7 +26,7 @@ public class OrderMapper {
         }
 
         o.setTotalAmount(totalAmount);
-        o.setStatus("PLACED");
+        o.setStatus("PENDING");
         return o;
     }
 

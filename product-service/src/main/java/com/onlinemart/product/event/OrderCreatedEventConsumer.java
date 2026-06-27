@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import com.onlinemart.product.event.*;
 import com.onlinemart.product.service.*;
+import com.onlinemart.product.event.*;
 
 @Component
 public class OrderCreatedEventConsumer {
@@ -20,18 +21,24 @@ public class OrderCreatedEventConsumer {
         this.productService = productService;
     }
 
-    @KafkaListener(topics = "${spring.kafka.topic.order.created}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${spring.kafka.topic.order.created}", groupId = "${spring.kafka.consumer.group-id}",
+            properties = {"spring.json.value.default.type=com.onlinemart.product.event.OrderCreatedEvent"})
     public void handleOrderCreated(OrderCreatedEvent event) {
-        log.info("Received {} for orderId={}", "${spring.kafka.topic.order.created}", event.getOrderId());
+        log.info("Received order.created for orderId={}", event.getOrderId());
 
-        event.getItems().forEach(item -> {
+        for (OrderItemEvent item : event.getItems()) {
             try {
-                productService.deductStock(item.getProductId(), item.getQuantity());
+                productService.deductStock(
+                        item.getProductId(),
+                        item.getQuantity(),
+                        event.getOrderId(),
+                        event.getCartId()
+                );
                 log.info("Deducted stock: productId={} qty={}", item.getProductId(), item.getQuantity());
             } catch (Exception e) {
                 log.error("Failed to deduct stock for productId={}", item.getProductId(), e);
-                // TODO: publish inventory.failed event for Saga compensation
             }
-        });
+        }
     }
+
 }

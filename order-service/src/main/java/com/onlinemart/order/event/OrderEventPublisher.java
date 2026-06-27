@@ -14,31 +14,42 @@ public class OrderEventPublisher {
     private static final Logger log = LoggerFactory.getLogger(OrderEventPublisher.class);
 
     @Value("${spring.kafka.topic.order.created}")
-    private String orderCreatedTopic;
+    private String ORDER_CREATED_TOPIC;
 
-    private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
+    @Value("${spring.kafka.topic.order.cancelled}")
+    private String ORDER_CANCELLED_TOPIC;
 
-    public OrderEventPublisher(KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate) {
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    public OrderEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
     public void publishOrderCreated(OrderCreatedEvent event) {
-        // key = userId string so all events for same user go to same partition
         String key = event.getCustomerId().toString();
 
-        CompletableFuture<SendResult<String, OrderCreatedEvent>> future =
-                kafkaTemplate.send(orderCreatedTopic, key, event);
+        CompletableFuture<SendResult<String, Object>> future =
+                kafkaTemplate.send(ORDER_CREATED_TOPIC, key, event);
 
         future.whenComplete((result, ex) -> {
             if (ex != null) {
-                log.error("Failed to publish {} for orderId={}", orderCreatedTopic, event.getOrderId(), ex);
+                log.error("Failed to publish {} for orderId={}", ORDER_CREATED_TOPIC, event.getOrderId(), ex);
             } else {
                 log.info("Published {} for orderId={} to partition={} offset={}",
-                        orderCreatedTopic,
+                        ORDER_CREATED_TOPIC,
                         event.getOrderId(),
                         result.getRecordMetadata().partition(),
                         result.getRecordMetadata().offset());
             }
         });
     }
+
+    public void publishOrderCancelled(OrderCancelledEvent event) {
+        kafkaTemplate.send(ORDER_CANCELLED_TOPIC, event.getOrderId().toString(), event)
+                .whenComplete((r, ex) -> {
+                    if (ex != null) log.error("Failed to publish {}", ORDER_CANCELLED_TOPIC, ex);
+                    else log.info("Published {} for orderId={}", ORDER_CANCELLED_TOPIC, event.getOrderId());
+                });
+    }
+
 }

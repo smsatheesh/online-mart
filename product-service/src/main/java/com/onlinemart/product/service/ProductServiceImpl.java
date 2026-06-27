@@ -1,5 +1,8 @@
 package com.onlinemart.product.service;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Service;
+
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
 import com.onlinemart.product.dto.response.AvailabilityResponseDto;
@@ -9,18 +12,21 @@ import com.onlinemart.product.entity.Product;
 import com.onlinemart.product.exception.ProductServiceException;
 import com.onlinemart.product.mapper.ProductMapper;
 import com.onlinemart.product.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.onlinemart.product.event.InventoryEventPublisher;
+import com.onlinemart.product.event.InventoryFailedEvent;
+import com.onlinemart.product.event.InventoryReservedEvent;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private InventoryEventPublisher inventoryEventPublisher;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper) {
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, InventoryEventPublisher inventoryEventPublisher) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
+        this.inventoryEventPublisher = inventoryEventPublisher;
     }
 
     @Override
@@ -146,9 +152,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void deductStock(Long productId, Long quantity) {
+    public void deductStock(Long productId, Long quantity, Long orderId, Long cartId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
+                    inventoryEventPublisher.publishFailed(
+                            new InventoryFailedEvent(orderId, cartId, "Product not found: " + productId));
                     ErrorResponseDto error = ErrorResponseDto.builder()
                             .success(false)
                             .message("Product not found for id: " + productId)
@@ -158,16 +166,16 @@ public class ProductServiceImpl implements ProductService {
                 });
 
         if (product.getAvailableStockQuantity() < quantity) {
-            ErrorResponseDto error = ErrorResponseDto.builder()
-                    .success(false)
-                    .message("Insufficient stock for productId: " + productId)
-                    .errorCode("INSUFFICIENT_STOCK")
-                    .build();
-            throw new ProductServiceException(error);
+            inventoryEventPublisher.publishFailed(
+                    new InventoryFailedEvent(orderId, cartId,
+                            "Insufficient stock for productId: " + productId));
+            return;
         }
 
         product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
         productRepository.save(product);
+
+        inventoryEventPublisher.publishReserved(new InventoryReservedEvent(orderId));
     }
 
 }
