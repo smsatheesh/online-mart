@@ -14,4 +14,6 @@ public interface ProductService {
 
     void deductStock(Long productId, Long quantity, Long orderId, Long cartId);
 
+    void restoreStock(Long productId, Long quantity);
+
 }
