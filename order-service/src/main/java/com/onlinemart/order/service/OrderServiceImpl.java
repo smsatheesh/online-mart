@@ -28,7 +28,7 @@ import com.onlinemart.order.repository.OrderRepository;
 import com.onlinemart.order.exception.OrderServiceException;
 import com.onlinemart.order.client.CartClientService;
 import com.onlinemart.order.client.dto.response.CartItemsDataDto;
-import com.onlinemart.order.event.CancelledOrderItemEvent;
+import com.onlinemart.order.event.OrderFailedItemEvent;
 
 @Slf4j
 @Service
@@ -183,9 +183,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<CancelledOrderItemEvent> getOrderItems(Long orderId) {
+    public List<OrderFailedItemEvent> getOrderItems(Long orderId) {
         return orderItemRepository.findByOrderId(orderId).stream()
-                .map(item -> new CancelledOrderItemEvent(
+                .map(item -> new OrderFailedItemEvent(
                         item.getProductId(),
                         item.getQuantity(),
                         item.getUnitPrice()))

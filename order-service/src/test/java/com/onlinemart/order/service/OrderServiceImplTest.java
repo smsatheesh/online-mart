@@ -19,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.onlinemart.order.event.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +48,9 @@ class OrderServiceImplTest {
 
     @InjectMocks
     private OrderServiceImpl orderService;
+
+    @Mock
+    private OrderEventPublisher orderEventPublisher;
 
     // ─── helper: build a CartItemsDataDto ────────────────────────────────────
 
@@ -87,8 +91,9 @@ class OrderServiceImplTest {
 
         when(cartClientService.fetchCartItems(1L)).thenReturn(cartItems);
         when(orderMapper.toEntity(request, 1000L)).thenReturn(entity);
-        when(orderRepository.save(entity)).thenReturn(savedOrder);                       // ← was missing
+        when(orderRepository.save(entity)).thenReturn(savedOrder);
         when(orderMapper.toSaveResponseDto(eq(savedOrder), anyList())).thenReturn(response);
+        doNothing().when(orderEventPublisher).publishOrderCreated(any(OrderCreatedEvent.class));
 
         OrderResponseDto result = orderService.saveOrder(request);
 
@@ -99,8 +104,10 @@ class OrderServiceImplTest {
         verify(orderMapper).toEntity(request, 1000L);
         verify(orderRepository).save(entity);
         verify(orderItemRepository).saveAll(anyList());
-        verify(orderMapper).toSaveResponseDto(eq(savedOrder), anyList());                // ← fixed, after the call
+        verify(orderEventPublisher).publishOrderCreated(any(OrderCreatedEvent.class)); // ← add this
+        verify(orderMapper).toSaveResponseDto(eq(savedOrder), anyList());
     }
+
 
     @Test
     void saveOrder_shouldThrowWhenCartIsEmpty() {

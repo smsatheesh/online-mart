@@ -1,18 +1,18 @@
-package com.onlinemart.cart.event;
+package com.onlinemart.order.event;
 
 import lombok.*;
 
-import java.util.List;
+import java.util.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderCancelledEvent {
+public class OrderFailedEvent {
 
     private Long orderId;
     private Long cartId;
     private Long customerId;
-    private List<CancelledOrderItemEvent> items;
+    private List<OrderFailedItemEvent> items;
 
 }
