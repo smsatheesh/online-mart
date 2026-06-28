@@ -18,10 +18,10 @@ public class OrderCreatedEventConsumer {
         this.cartService = cartService;
     }
 
-    @KafkaListener(topics = "order.created", groupId = "cart-service-group")
+    @KafkaListener(topics = "${spring.kafka.topic.order.created}", groupId = "${spring.kafka.consumer.group-id}")
     public void handleOrderCreated(OrderCreatedEvent event) {
-        log.info("Received order.created for orderId={}, clearing cartId={}",
-                event.getOrderId(), event.getCartId());
+        log.info("Received {} for orderId={}, clearing cartId={}",
+                "${spring.kafka.topic.order.created}", event.getOrderId(), event.getCartId());
 
         try {
             cartService.clearCartItems(event.getCartId());

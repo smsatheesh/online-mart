@@ -28,6 +28,8 @@ import com.onlinemart.order.repository.OrderRepository;
 import com.onlinemart.order.exception.OrderServiceException;
 import com.onlinemart.order.client.CartClientService;
 import com.onlinemart.order.client.dto.response.CartItemsDataDto;
+import com.onlinemart.order.event.OrderFailedItemEvent;
+import com.onlinemart.order.event.OrderCancelledEvent;
 
 @Slf4j
 @Service
@@ -105,7 +107,11 @@ public class OrderServiceImpl implements OrderService {
 
             orderEventPublisher.publishOrderCreated(event);
 
-            return orderMapper.toSaveResponseDto(savedOrder, orderItems);
+            return OrderResponseDto.builder()
+                    .success(Boolean.TRUE)
+                    .message("Order received and is being processed")
+                    .data(orderMapper.toSaveResponseDto(savedOrder, orderItems).getData())
+                    .build();
 
         } catch (OrderServiceException ex) {
             throw ex;
@@ -153,8 +159,33 @@ public class OrderServiceImpl implements OrderService {
             Order order = orderRepository.findById(requestDto.getOrderId())
                     .orElseThrow(() -> buildException("Order Id not exists", "ORDER_NOT_FOUND"));
 
+            if("CANCELLED".equalsIgnoreCase(requestDto.getStatus())
+                    && "DELIVERED".equalsIgnoreCase(order.getStatus())) {
+                buildException("Delivered order cannot be cancelled", "ORDER_CANCELLED_NOT_ALLOWED");
+            }
+
+            String previousStatus = order.getStatus();
             order.setStatus(requestDto.getStatus());
             orderRepository.save(order);
+
+            // Publish cancellation event to restore inventory
+            if ("CANCELLED".equalsIgnoreCase(requestDto.getStatus())) {
+                List<OrderItems> orderItems = orderItemRepository.findByOrderId(order.getId());
+
+                List<OrderItemEvent> itemEvents = orderItems.stream()
+                        .map(oi -> new OrderItemEvent(oi.getProductId(),  oi.getQuantity(), oi.getUnitPrice()))
+                        .toList();
+
+                OrderCancelledEvent cancelledEvent = new OrderCancelledEvent(
+                        order.getId(),
+                        order.getCustomerId(),
+                        order.getCartId(),
+                        itemEvents
+                    );
+
+                orderEventPublisher.publishOrderCancelled(cancelledEvent);
+                log.info("Published {} for orderId={} previousStatus={}", "${spring.kafka.topic.order.cancelled}", order.getId(), previousStatus);
+            }
 
             OrderDto orderDto = fetchOrder(order);
 
@@ -175,6 +206,16 @@ public class OrderServiceImpl implements OrderService {
                     .build();
             throw new OrderServiceException(error);
         }
+    }
+
+    @Override
+    public List<OrderFailedItemEvent> getOrderItems(Long orderId) {
+        return orderItemRepository.findByOrderId(orderId).stream()
+                .map(item -> new OrderFailedItemEvent(
+                        item.getProductId(),
+                        item.getQuantity(),
+                        item.getUnitPrice()))
+                .toList();
     }
 
     private OrderDto fetchOrder(Order order) {

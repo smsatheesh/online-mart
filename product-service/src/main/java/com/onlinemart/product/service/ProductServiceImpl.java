@@ -1,5 +1,8 @@
 package com.onlinemart.product.service;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Service;
+
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
 import com.onlinemart.product.dto.response.AvailabilityResponseDto;
@@ -9,18 +12,27 @@ import com.onlinemart.product.entity.Product;
 import com.onlinemart.product.exception.ProductServiceException;
 import com.onlinemart.product.mapper.ProductMapper;
 import com.onlinemart.product.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.onlinemart.product.event.InventoryEventPublisher;
+import com.onlinemart.product.event.InventoryFailedEvent;
+import com.onlinemart.product.event.InventoryReservedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private InventoryEventPublisher inventoryEventPublisher;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper) {
+    private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
+
+    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, InventoryEventPublisher inventoryEventPublisher) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
+        this.inventoryEventPublisher = inventoryEventPublisher;
     }
 
     @Override
@@ -146,7 +158,35 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void deductStock(Long productId, Long quantity) {
+    public void deductStock(Long productId, Long quantity, Long orderId, Long cartId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    inventoryEventPublisher.publishFailed(
+                            new InventoryFailedEvent(orderId, cartId, "Product not found: " + productId));
+                    ErrorResponseDto error = ErrorResponseDto.builder()
+                            .success(false)
+                            .message("Product not found for id: " + productId)
+                            .errorCode("PRODUCT_NOT_FOUND")
+                            .build();
+                    return new ProductServiceException(error);
+                });
+
+        if (product.getAvailableStockQuantity() < quantity) {
+            inventoryEventPublisher.publishFailed(
+                    new InventoryFailedEvent(orderId, cartId,
+                            "Insufficient stock for productId: " + productId));
+            return;
+        }
+
+        product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
+        productRepository.save(product);
+
+        inventoryEventPublisher.publishReserved(new InventoryReservedEvent(orderId));
+    }
+
+    @Override
+    @Transactional
+    public void restoreStock(Long productId, Long quantity) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
                     ErrorResponseDto error = ErrorResponseDto.builder()
@@ -157,17 +197,11 @@ public class ProductServiceImpl implements ProductService {
                     return new ProductServiceException(error);
                 });
 
-        if (product.getAvailableStockQuantity() < quantity) {
-            ErrorResponseDto error = ErrorResponseDto.builder()
-                    .success(false)
-                    .message("Insufficient stock for productId: " + productId)
-                    .errorCode("INSUFFICIENT_STOCK")
-                    .build();
-            throw new ProductServiceException(error);
-        }
-
-        product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
+        product.setAvailableStockQuantity(product.getAvailableStockQuantity() + quantity);
         productRepository.save(product);
+
+        log.info("Restored stock for productId={} by qty={} newStock={}",
+                productId, quantity, product.getAvailableStockQuantity());
     }
 
 }

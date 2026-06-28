@@ -22,8 +22,9 @@ import com.onlinemart.cart.client.dto.ProductDataDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
+import com.onlinemart.cart.event.OrderFailedItemEvent;
 
-import java.util.*;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -250,6 +251,28 @@ public class CartServiceImpl implements CartService {
                     .build();
             throw new CartServiceException(error);
         }
+    }
+
+    @Override
+    @Transactional
+    public void restoreCart(Long cartId, List<OrderFailedItemEvent> items) {
+        items.forEach(item -> {
+            boolean exists = cartItemRepository.existsByCartIdAndProductId(
+                    cartId, item.getProductId());
+            if (!exists) {
+                CartItems cartItem = new CartItems();
+                cartItem.setCartId(cartId);
+                cartItem.setProductId(item.getProductId());
+                cartItem.setQuantity(item.getQuantity());
+                cartItem.setUnitPrice(item.getUnitPrice());
+                cartItemRepository.save(cartItem);
+                log.info("Restored cartItem productId={} qty={} to cartId={}",
+                        item.getProductId(), item.getQuantity(), cartId);
+            } else {
+                log.warn("CartItems already exists for cartId={} productId={} — skipping restore",
+                        cartId, item.getProductId());
+            }
+        });
     }
 
     private CartDataDto fetchAllItems(Long cartId, Cart cart) {
