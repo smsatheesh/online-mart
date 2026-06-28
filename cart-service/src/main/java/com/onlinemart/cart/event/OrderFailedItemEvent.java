@@ -1,4 +1,4 @@
-package com.onlinemart.order.event;
+package com.onlinemart.cart.event;
 
 import lombok.*;
 
@@ -6,7 +6,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CancelledOrderItemEvent {
+public class OrderFailedItemEvent {
 
     private Long productId;
     private Long quantity;

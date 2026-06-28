@@ -22,7 +22,7 @@ import com.onlinemart.cart.client.dto.ProductDataDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
-import com.onlinemart.cart.event.CancelledOrderItemEvent;
+import com.onlinemart.cart.event.OrderFailedItemEvent;
 
 import java.util.List;
 
@@ -255,7 +255,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void restoreCart(Long cartId, List<CancelledOrderItemEvent> items) {
+    public void restoreCart(Long cartId, List<OrderFailedItemEvent> items) {
         items.forEach(item -> {
             boolean exists = cartItemRepository.existsByCartIdAndProductId(
                     cartId, item.getProductId());

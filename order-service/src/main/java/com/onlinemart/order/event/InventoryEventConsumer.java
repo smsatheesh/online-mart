@@ -39,17 +39,17 @@ public class InventoryEventConsumer {
     @KafkaListener(topics = "${spring.kafka.topic.inventory.failed}", groupId = "${spring.kafka.consumer.group-id}",
             properties = {"spring.json.value.default.type=com.onlinemart.order.event.InventoryFailedEvent"})
     public void handleInventoryFailed(InventoryFailedEvent event) {
-        log.warn("Inventory failed for orderId={} reason={} → CANCELLED", event.getOrderId(), event.getReason());
+        log.warn("Inventory failed for orderId={} reason={} → FAILED", event.getOrderId(), event.getReason());
 
         OrderStatusRequestDto requestDto = new OrderStatusRequestDto();
         requestDto.setOrderId(event.getOrderId());
-        requestDto.setStatus("CANCELLED");
+        requestDto.setStatus("FAILED");
         orderService.updateStatusOfOrder(requestDto);
 
-        List<CancelledOrderItemEvent> items = orderService.getOrderItems(event.getOrderId());
+        List<OrderFailedItemEvent> items = orderService.getOrderItems(event.getOrderId());
 
-        orderEventPublisher.publishOrderCancelled(
-                new OrderCancelledEvent(event.getOrderId(), event.getCartId(), null, items));
+        orderEventPublisher.publishOrderFailed(
+                new OrderFailedEvent(event.getOrderId(), event.getCartId(), null, items));
     }
 
 }
