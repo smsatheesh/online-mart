@@ -19,6 +19,9 @@ public class OrderEventPublisher {
     @Value("${spring.kafka.topic.order.failed}")
     private String ORDER_FAILED_TOPIC;
 
+    @Value("${spring.kafka.topic.order.cancelled}")
+    private String ORDER_CANCELLED_TOPIC;
+
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public OrderEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -49,6 +52,14 @@ public class OrderEventPublisher {
                 .whenComplete((r, ex) -> {
                     if (ex != null) log.error("Failed to publish {}", ORDER_FAILED_TOPIC, ex);
                     else log.info("Published {} for orderId={}", ORDER_FAILED_TOPIC, event.getOrderId());
+                });
+    }
+
+    public void publishOrderCancelled(OrderCancelledEvent event) {
+        kafkaTemplate.send(ORDER_CANCELLED_TOPIC, event.getOrderId().toString(), event)
+                .whenComplete((r, ex) -> {
+                   if (ex != null) log.error("Failed to publish {}", ORDER_CANCELLED_TOPIC, ex);
+                   else log.info("Published {} for orderId={}", ORDER_CANCELLED_TOPIC, event.getOrderId());
                 });
     }
 

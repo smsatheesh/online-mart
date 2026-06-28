@@ -823,6 +823,8 @@ PATCH /orders/{orderId}/status
 # 8. Order Status Lifecycle
 
 ```text
+PENDING
+  ↓
 PLACED
   ↓
 CONFIRMED
