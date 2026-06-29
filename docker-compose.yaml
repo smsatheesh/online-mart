@@ -25,6 +25,52 @@ services:
       retries: 5
 
   # ──────────────────────────────────────────
+  # Kafka – KRaft mode (no ZooKeeper)
+  # ──────────────────────────────────────────
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: online-mart-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft identity
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      # Listeners
+      # INTERNAL   → inter-container traffic on port 9094
+      # EXTERNAL   → host machine access on port 9092
+      # CONTROLLER → KRaft controller on port 9093
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9094,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9094,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Broker defaults
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+
+      # Unique cluster ID (generate once with: kafka-storage.sh random-uuid)
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - online-mart-network
+    healthcheck:
+      # apache/kafka:3.7.0 scripts live under /opt/kafka/bin/
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+
+  # ──────────────────────────────────────────
   # Product Service  (port 8081)
   # ──────────────────────────────────────────
   product-service:
@@ -41,8 +87,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: product_pass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9094
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - online-mart-network
@@ -65,8 +114,11 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       PRODUCT_SERVICE_URL: http://product-service:8081
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9094
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
       product-service:
         condition: service_started
@@ -92,8 +144,11 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       PRODUCT_SERVICE_URL: http://product-service:8081
       CART_SERVICE_URL: http://cart-service:8083
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9094
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
       product-service:
         condition: service_started
@@ -129,6 +184,7 @@ services:
 # ──────────────────────────────────────────
 volumes:
   postgres_data:
+  kafka_data:
 
 networks:
   online-mart-network:
