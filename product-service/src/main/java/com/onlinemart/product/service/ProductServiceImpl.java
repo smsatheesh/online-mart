@@ -175,50 +175,64 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deductStock(Long productId, Long quantity, Long orderId, Long cartId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> {
-//                    inventoryEventPublisher.publishFailed(
-//                            new InventoryFailedEvent(orderId, cartId, "Product not found: " + productId));
-                    outboxWriter.write(
-                            orderId.toString(),
-                            "INVENTORY_FAILED",
-                            inventoryFailedTopic,
-                            new InventoryFailedEvent(orderId, cartId,
-                                    "Product not found: " + productId)
-                    );
+        try {
+            AvailabilityResponseDto availability = checkAvailability(productId);
 
-                    ErrorResponseDto error = ErrorResponseDto.builder()
-                            .success(false)
-                            .message("Product not found for id: " + productId)
-                            .errorCode("PRODUCT_NOT_FOUND")
-                            .build();
-                    return new ProductServiceException(error);
-                });
-
-        if (product.getAvailableStockQuantity() < quantity) {
+            if (!availability.getData().getIsAvailable()
+                    || availability.getData().getAvailableQuantity() < quantity) {
 //            inventoryEventPublisher.publishFailed(
 //                    new InventoryFailedEvent(orderId, cartId,
 //                            "Insufficient stock for productId: " + productId));
+                outboxWriter.write(
+                        orderId.toString(),
+                        "INVENTORY_FAILED",
+                        inventoryFailedTopic,
+                        new InventoryFailedEvent(orderId, cartId,
+                                "Insufficient stock for productId: " + productId
+                                        + " available=" + availability.getData().getAvailableQuantity()
+                                        + " requested=" + quantity)
+                );
+                log.warn("Insufficient stock: productId={} available={} requested={}",
+                        productId, availability.getData().getAvailableQuantity(), quantity);
+                return;
+            }
+
+            Product product = productRepository.findById(productId).get();
+            product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
+            productRepository.save(product);
+
+//          inventoryEventPublisher.publishReserved(new InventoryReservedEvent(orderId));
+            outboxWriter.write(
+                    orderId.toString(),
+                    "INVENTORY_RESERVED",
+                    inventoryReservedTopic,
+                    new InventoryReservedEvent(orderId)
+            );
+            log.info("Stock deducted: productId={} qty={} orderId={} remaining={}",
+                    productId, quantity, orderId, product.getAvailableStockQuantity());
+
+        } catch (ProductServiceException ex) {
+//                    inventoryEventPublisher.publishFailed(
+//                            new InventoryFailedEvent(orderId, cartId, "Product not found: " + productId));
+            outboxWriter.write(
+                    orderId.toString(),
+                    "INVENTORY_FAILED",
+                    inventoryFailedTopic,
+                    new InventoryFailedEvent(orderId, cartId, ex.getErrorResponse().getMessage())
+            );
+            log.error("Stock deduction failed: productId={} orderId={} reason={}",
+                    productId, orderId, ex.getErrorResponse().getMessage());
+        } catch (Exception ex) {
             outboxWriter.write(
                     orderId.toString(),
                     "INVENTORY_FAILED",
                     inventoryFailedTopic,
                     new InventoryFailedEvent(orderId, cartId,
-                            "Insufficient stock for productId: " + productId)
+                            "Unexpected error during stock deduction for productId: " + productId)
             );
-            return;
+            log.error("Unexpected error in deductStock: productId={} orderId={}",
+                    productId, orderId, ex);
         }
-
-        product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
-        productRepository.save(product);
-
-//        inventoryEventPublisher.publishReserved(new InventoryReservedEvent(orderId));
-        outboxWriter.write(
-                orderId.toString(),
-                "INVENTORY_RESERVED",
-                inventoryReservedTopic,
-                new InventoryReservedEvent(orderId)
-        );
     }
 
     @Override

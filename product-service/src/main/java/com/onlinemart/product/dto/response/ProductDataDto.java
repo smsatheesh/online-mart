@@ -14,10 +14,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class ProductDataDto extends AuditResponseDto {
 
     @Schema(description = "Category identifier", example = "CAT001")
-    private String categoryId;
+    private Long categoryId;
 
     @Schema(description = "Product id exposed to clients", example = "PROD001")
-    private String productId;
+    private Long productId;
 
     @Schema(description = "Name of the product", example = "Dell Inspiron 15")
     private String productName;

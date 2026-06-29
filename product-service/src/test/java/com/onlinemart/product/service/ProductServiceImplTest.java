@@ -80,9 +80,9 @@ class ProductServiceImplTest {
 
         // --- ProductDataDto (the inner payload) ---
         ProductDataDto sampleData = ProductDataDto.builder()
-                .productId("PROD001")                        // String productId, not Long id
+                .productId(1L)                        // Long productId
                 .productName("Wireless Mouse")
-                .categoryId("10")
+                .categoryId(10L)
                 .price(1999L)
                 .availableQuantity(50L)
                 .thumbnailUrl("https://example.com/mouse.png")
@@ -168,7 +168,7 @@ class ProductServiceImplTest {
 
             // Assert — inner data payload
             assertThat(result.getData()).isNotNull();
-            assertThat(result.getData().getProductId()).isEqualTo("PROD001"); // String productId
+            assertThat(result.getData().getProductId()).isEqualTo(1L); // Long productId
             assertThat(result.getData().getPrice()).isEqualTo(1999L);         // Long price
 
             verify(productMapper).toEntity(request);
