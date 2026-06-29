@@ -1,6 +1,7 @@
 package com.onlinemart.product.outbox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -20,6 +22,7 @@ public class OutboxPoller {
 
     private static final int MAX_RETRIES = 3;
     private static final long BASE_DELAY_SECONDS = 5;
+    private static final long KAFKA_SEND_TIMEOUT_SECONDS = 5;
 
     private final OutboxEventRepository outboxEventRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -39,8 +42,7 @@ public class OutboxPoller {
 
         for (OutboxEvent event : pendingEvents) {
             try {
-                Object payload = objectMapper.readValue(event.getPayload(), Object.class);
-                kafkaTemplate.send(event.getTopic(), event.getAggregateId(), payload).get();
+                publishToKafka(event);
 
                 event.setStatus("PUBLISHED");
                 event.setPublishedAt(LocalDateTime.now());
@@ -69,4 +71,16 @@ public class OutboxPoller {
         }
     }
 
+    @CircuitBreaker(name = "kafkaBroker", fallbackMethod = "kafkaFallback")
+    public void publishToKafka(OutboxEvent event) throws Exception {
+        Object payload = objectMapper.readValue(event.getPayload(), Object.class);
+        kafkaTemplate.send(event.getTopic(), event.getAggregateId(), payload)
+                .get(KAFKA_SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    public void kafkaFallback(OutboxEvent event, Throwable t) {
+        log.error("Kafka circuit breaker OPEN — broker unavailable, skipping publish for event id={} type={}",
+                event.getId(), event.getEventType());
+        throw new RuntimeException("Kafka broker circuit breaker is OPEN", t);
+    }
 }

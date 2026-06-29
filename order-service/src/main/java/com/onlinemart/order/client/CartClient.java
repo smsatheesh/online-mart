@@ -6,7 +6,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.onlinemart.order.client.dto.response.CartResponseDto;
 
-@FeignClient(name = "cart-service", url = "${cart.service.url}")
+@FeignClient(
+        name = "cart-service",
+        url = "${cart.service.url}",
+        fallback = CartServiceFallback.class
+)
 public interface CartClient {
 
     @GetMapping("/api/carts/{cartId}")

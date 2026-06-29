@@ -18,10 +18,6 @@ public class CartClientService {
         this.cartClient = cartClient;
     }
 
-    /**
-     * Calls cart-service via feign and returns cart items as a list.
-     * All feign/response null-safety handling stays here in the client layer.
-     */
     public List<CartItemsDataDto> fetchCartItems(Long cartId) {
         CartResponseDto response = cartClient.fetchCart(cartId);
         if (response == null || response.getData() == null || response.getData().getItems() == null) {
