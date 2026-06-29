@@ -37,6 +37,15 @@ public class OutboxEvent {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
+    @Column(name = "next_retry_at")
+    private LocalDateTime nextRetryAt;
+
+    @Column(name = "failed_at")
+    private LocalDateTime failedAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
