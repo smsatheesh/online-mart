@@ -39,7 +39,7 @@ public class InventoryEventPublisher {
         kafkaTemplate.send(INVENTORY_RESERVED_TOPIC, event.getOrderId().toString(), event)
                 .whenComplete((r, ex) -> {
                     if (ex != null) log.error("Failed to publish {} for orderId={}", INVENTORY_RESERVED_TOPIC, event.getOrderId(), ex);
-                    else log.info("Published {} for orderId={}", "${}", INVENTORY_RESERVED_TOPIC,event.getOrderId());
+                    else log.info("Published {} for orderId={}", INVENTORY_RESERVED_TOPIC, event.getOrderId());
                 });
     }
 
