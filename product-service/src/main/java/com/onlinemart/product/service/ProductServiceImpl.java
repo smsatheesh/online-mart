@@ -2,6 +2,10 @@ package com.onlinemart.product.service;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
@@ -15,9 +19,7 @@ import com.onlinemart.product.repository.ProductRepository;
 import com.onlinemart.product.event.InventoryEventPublisher;
 import com.onlinemart.product.event.InventoryFailedEvent;
 import com.onlinemart.product.event.InventoryReservedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import lombok.extern.slf4j.Slf4j;
+import com.onlinemart.product.outbox.OutboxWriter;
 
 @Slf4j
 @Service
@@ -29,10 +31,24 @@ public class ProductServiceImpl implements ProductService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper, InventoryEventPublisher inventoryEventPublisher) {
+    private final OutboxWriter outboxWriter;
+
+    @Value("${spring.kafka.topic.inventory.reserved}")
+    private String inventoryReservedTopic;
+
+    @Value("${spring.kafka.topic.inventory.failed}")
+    private String inventoryFailedTopic;
+
+    public ProductServiceImpl(
+            ProductRepository productRepository,
+            ProductMapper productMapper,
+            InventoryEventPublisher inventoryEventPublisher,
+            OutboxWriter outboxWriter
+    ) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.inventoryEventPublisher = inventoryEventPublisher;
+        this.outboxWriter = outboxWriter;
     }
 
     @Override
@@ -161,8 +177,16 @@ public class ProductServiceImpl implements ProductService {
     public void deductStock(Long productId, Long quantity, Long orderId, Long cartId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    inventoryEventPublisher.publishFailed(
-                            new InventoryFailedEvent(orderId, cartId, "Product not found: " + productId));
+//                    inventoryEventPublisher.publishFailed(
+//                            new InventoryFailedEvent(orderId, cartId, "Product not found: " + productId));
+                    outboxWriter.write(
+                            orderId.toString(),
+                            "INVENTORY_FAILED",
+                            inventoryFailedTopic,
+                            new InventoryFailedEvent(orderId, cartId,
+                                    "Product not found: " + productId)
+                    );
+
                     ErrorResponseDto error = ErrorResponseDto.builder()
                             .success(false)
                             .message("Product not found for id: " + productId)
@@ -172,16 +196,29 @@ public class ProductServiceImpl implements ProductService {
                 });
 
         if (product.getAvailableStockQuantity() < quantity) {
-            inventoryEventPublisher.publishFailed(
+//            inventoryEventPublisher.publishFailed(
+//                    new InventoryFailedEvent(orderId, cartId,
+//                            "Insufficient stock for productId: " + productId));
+            outboxWriter.write(
+                    orderId.toString(),
+                    "INVENTORY_FAILED",
+                    inventoryFailedTopic,
                     new InventoryFailedEvent(orderId, cartId,
-                            "Insufficient stock for productId: " + productId));
+                            "Insufficient stock for productId: " + productId)
+            );
             return;
         }
 
         product.setAvailableStockQuantity(product.getAvailableStockQuantity() - quantity);
         productRepository.save(product);
 
-        inventoryEventPublisher.publishReserved(new InventoryReservedEvent(orderId));
+//        inventoryEventPublisher.publishReserved(new InventoryReservedEvent(orderId));
+        outboxWriter.write(
+                orderId.toString(),
+                "INVENTORY_RESERVED",
+                inventoryReservedTopic,
+                new InventoryReservedEvent(orderId)
+        );
     }
 
     @Override

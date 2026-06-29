@@ -20,16 +20,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.onlinemart.order.event.*;
+import com.onlinemart.order.outbox.OutboxWriter;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
+
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceImplTest {
@@ -51,6 +55,15 @@ class OrderServiceImplTest {
 
     @Mock
     private OrderEventPublisher orderEventPublisher;
+
+    @Mock
+    private OutboxWriter outboxWriter;
+
+    // ─── setup ───────────────────────────────────────────────────────────────
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(orderService, "orderCreatedTopic", "local.sales.ecommerce.order.created.v1");
+    }
 
     // ─── helper: build a CartItemsDataDto ────────────────────────────────────
 
@@ -86,14 +99,16 @@ class OrderServiceImplTest {
 
         OrderResponseDto response = OrderResponseDto.builder()
                 .success(true)
-                .message("Order created successfully")
+                .message("Order received and is being processed")
                 .build();
 
         when(cartClientService.fetchCartItems(1L)).thenReturn(cartItems);
         when(orderMapper.toEntity(request, 1000L)).thenReturn(entity);
         when(orderRepository.save(entity)).thenReturn(savedOrder);
         when(orderMapper.toSaveResponseDto(eq(savedOrder), anyList())).thenReturn(response);
-        doNothing().when(orderEventPublisher).publishOrderCreated(any(OrderCreatedEvent.class));
+
+        // outboxWriter.write() is void — doNothing is the explicit stub
+        doNothing().when(outboxWriter).write(anyString(), anyString(), anyString(), any());
 
         OrderResponseDto result = orderService.saveOrder(request);
 
@@ -104,10 +119,14 @@ class OrderServiceImplTest {
         verify(orderMapper).toEntity(request, 1000L);
         verify(orderRepository).save(entity);
         verify(orderItemRepository).saveAll(anyList());
-        verify(orderEventPublisher).publishOrderCreated(any(OrderCreatedEvent.class)); // ← add this
+        verify(outboxWriter).write(
+                eq("1"),
+                eq("ORDER_CREATED"),
+                eq("local.sales.ecommerce.order.created.v1"),
+                any()
+        );
         verify(orderMapper).toSaveResponseDto(eq(savedOrder), anyList());
     }
-
 
     @Test
     void saveOrder_shouldThrowWhenCartIsEmpty() {
