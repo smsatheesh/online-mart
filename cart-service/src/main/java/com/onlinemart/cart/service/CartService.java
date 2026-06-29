@@ -3,8 +3,11 @@ package com.onlinemart.cart.service;
 import com.onlinemart.cart.dto.request.CartRequestDto;
 import com.onlinemart.cart.dto.request.CreateCartItemRequestDto;
 import com.onlinemart.cart.dto.request.UpdateCartItemRequestDto;
+import com.onlinemart.cart.dto.request.BrowseRequestDto;
 import com.onlinemart.cart.dto.response.CartResponseDto;
 import com.onlinemart.cart.dto.response.CartDetailResponseDto;
+import com.onlinemart.cart.dto.response.BrowseResponseDto;
+import com.onlinemart.cart.dto.response.CartBrowseResponseDto;
 import com.onlinemart.cart.event.OrderFailedItemEvent;
 
 import java.util.List;
@@ -26,5 +29,7 @@ public interface CartService {
     CartResponseDto fetchCartAndDetails(Long cartId);
 
     void restoreCart(Long cartId, List<OrderFailedItemEvent> items);
+
+    BrowseResponseDto<CartBrowseResponseDto> browse(BrowseRequestDto req);
 
 }

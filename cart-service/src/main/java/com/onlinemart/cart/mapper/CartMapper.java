@@ -1,13 +1,13 @@
 package com.onlinemart.cart.mapper;
 
-import org.springframework.stereotype.Component;
-
 import com.onlinemart.cart.dto.request.CartRequestDto;
-import com.onlinemart.cart.dto.response.CartResponseDto;
+import com.onlinemart.cart.dto.response.CartBrowseResponseDto;
 import com.onlinemart.cart.dto.response.CartDataDto;
 import com.onlinemart.cart.dto.response.CartDetailResponseDto;
 import com.onlinemart.cart.dto.response.CartDto;
+import com.onlinemart.cart.dto.response.CartResponseDto;
 import com.onlinemart.cart.entity.Cart;
+import org.springframework.stereotype.Component;
 
 @Component
 public class CartMapper {
@@ -83,6 +83,19 @@ public class CartMapper {
                 .message("Cart fetched successfully")
                 .data(data)
                 .build();
+    }
+
+    public CartBrowseResponseDto toCartBrowseDto(Cart cart) {
+        CartBrowseResponseDto dto = new CartBrowseResponseDto();
+        dto.setCartId(cart.getId());
+        dto.setCustomerId(cart.getCustomerId());
+        dto.setPlatform(cart.getPlatform());
+        dto.setStatus(cart.getStatus());
+        dto.setCreatedBy(cart.getCreatedBy());
+        dto.setUpdatedBy(cart.getUpdatedBy());
+        dto.setCreatedAt(cart.getCreatedAt());
+        dto.setUpdatedAt(cart.getUpdatedAt());
+        return dto;
     }
 
 }

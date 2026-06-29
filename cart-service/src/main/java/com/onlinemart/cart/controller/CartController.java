@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import com.onlinemart.cart.dto.request.CreateCartRequestDto;
 import com.onlinemart.cart.dto.request.UpdateCartItemRequestDto;
@@ -26,6 +29,17 @@ import com.onlinemart.cart.dto.response.CartResponseDto;
 import com.onlinemart.cart.dto.response.CartDetailResponseDto;
 import com.onlinemart.cart.dto.response.ErrorResponseDto;
 import com.onlinemart.cart.service.CartService;
+import com.onlinemart.cart.dto.request.BrowseRequestDto;
+import com.onlinemart.cart.dto.response.BrowseResponseDto;
+import com.onlinemart.cart.dto.response.CartBrowseResponseDto;
+import com.onlinemart.cart.dto.response.CartBrowseSwaggerResponse;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -191,6 +205,49 @@ public class CartController {
             @PathVariable Long cartId) {
         CartResponseDto response = cartService.fetchCartAndDetails(cartId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(
+            summary = "Browse carts",
+            description = "Fetch paginated, filtered, and sorted list of carts. Filters use AND logic."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Carts fetched successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CartBrowseSwaggerResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(hidden = true)))
+    })
+    @PostMapping("/browse")
+    public ResponseEntity<BrowseResponseDto<CartBrowseResponseDto>> browse(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Browse request with pagination, filters and sort",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = BrowseRequestDto.class),
+                            examples = @ExampleObject(
+                                    name = "Filter by customer, sort by createdAt",
+                                    value = """
+                        {
+                          "page": 0,
+                          "size": 20,
+                          "limit": 20,
+                          "filters": [{ "customerId": 1 }, { "status": true }],
+                          "sort": [{ "createdAt": "desc" }]
+                        }
+                        """
+                            )
+                    )
+            )
+            @RequestBody BrowseRequestDto req) {
+        return ResponseEntity.ok(cartService.browse(req));
     }
 
 }

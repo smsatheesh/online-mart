@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
@@ -20,6 +21,15 @@ import com.onlinemart.product.event.InventoryEventPublisher;
 import com.onlinemart.product.event.InventoryFailedEvent;
 import com.onlinemart.product.event.InventoryReservedEvent;
 import com.onlinemart.product.outbox.OutboxWriter;
+import com.onlinemart.product.dto.response.BrowseResponseDto;
+import com.onlinemart.product.dto.response.ProductBrowseResponseDto;
+import com.onlinemart.product.dto.request.BrowseRequestDto;
+import com.onlinemart.product.helper.BrowseHelper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.List;
+import java.util.stream.Collectors;
+import com.onlinemart.product.dto.response.BrowseMetaDto;
 
 @Slf4j
 @Service
@@ -253,6 +263,28 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("Restored stock for productId={} by qty={} newStock={}",
                 productId, quantity, product.getAvailableStockQuantity());
+    }
+
+    @Override
+    public BrowseResponseDto<ProductBrowseResponseDto> browse(BrowseRequestDto req) {
+        Specification<Product> spec = BrowseHelper.buildSpecification(req.getFilters());
+        Pageable pageable = BrowseHelper.buildPageable(req);
+
+        Page<Product> resultPage = productRepository.findAll(spec, pageable);
+
+        List<ProductBrowseResponseDto> data = resultPage.getContent()
+                .stream()
+                .map(productMapper::toProductBrowseDto)
+                .collect(Collectors.toList());
+
+        BrowseMetaDto meta = new BrowseMetaDto(
+                req.getPage(),
+                req.getSize(),
+                req.getLimit(),
+                resultPage.getTotalElements()
+        );
+
+        return new BrowseResponseDto<>(true, "Products fetched successfully", data, meta);
     }
 
 }

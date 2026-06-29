@@ -2,8 +2,12 @@ package com.onlinemart.product.controller;
 
 import com.onlinemart.product.dto.request.CreateProductRequestDto;
 import com.onlinemart.product.dto.request.UpdateProductRequestDto;
+import com.onlinemart.product.dto.request.BrowseRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
 import com.onlinemart.product.dto.response.ErrorResponseDto;
+import com.onlinemart.product.dto.response.BrowseResponseDto;
+import com.onlinemart.product.dto.response.ProductBrowseResponseDto;
+import com.onlinemart.product.dto.response.ProductBrowseSwaggerResponse;
 import com.onlinemart.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -21,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
 @RequestMapping("/api/products")
@@ -91,6 +96,50 @@ public class ProductController {
     public ResponseEntity<com.onlinemart.product.dto.response.AvailabilityResponseDto> checkAvailability(@PathVariable Long id) {
         com.onlinemart.product.dto.response.AvailabilityResponseDto response = productService.checkAvailability(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Browse products",
+            description = "Fetch paginated, filtered, and sorted list of products. " +
+                    "Filters use AND logic. Each sort entry applies in order."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Products fetched successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProductBrowseSwaggerResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(hidden = true)))
+    })
+    @PostMapping("/browse")
+    public ResponseEntity<BrowseResponseDto<ProductBrowseResponseDto>> browse(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Browse request with pagination, filters, and sort",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = BrowseRequestDto.class),
+                            examples = @ExampleObject(
+                                    name = "Filter by category, sort by price",
+                                    value = """
+                        {
+                          "page": 0,
+                          "size": 20,
+                          "limit": 20,
+                          "filters": [{ "categoryId": 1 }],
+                          "sort": [{ "price": "asc" }]
+                        }
+                        """
+                            )
+                    )
+            )
+            @RequestBody BrowseRequestDto req) {
+        return ResponseEntity.ok(productService.browse(req));
     }
 
 }

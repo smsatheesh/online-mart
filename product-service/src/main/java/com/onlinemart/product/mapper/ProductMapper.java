@@ -3,10 +3,9 @@ package com.onlinemart.product.mapper;
 import com.onlinemart.product.dto.request.ProductRequestDto;
 import com.onlinemart.product.dto.response.ProductResponseDto;
 import com.onlinemart.product.dto.response.ProductDataDto;
+import com.onlinemart.product.dto.response.ProductBrowseResponseDto;
 import com.onlinemart.product.entity.Product;
 import org.springframework.stereotype.Component;
-
-
 
 @Component
 public class ProductMapper {
@@ -48,6 +47,25 @@ public class ProductMapper {
                 .message("Products created successfully")
                 .data(data)
                 .build();
+    }
+
+    public ProductBrowseResponseDto toProductBrowseDto(Product product) {
+        ProductBrowseResponseDto dto = new ProductBrowseResponseDto();
+        dto.setCategoryId(product.getCategoryId());
+        dto.setProductId(product.getId() != null
+                ? product.getId() : null);
+        dto.setProductName(product.getName());
+        dto.setPrice(product.getPrice());
+        dto.setAvailableQuantity(product.getAvailableStockQuantity());
+        dto.setThumbnailUrl(product.getThumbnailUrl());
+        dto.setStatus(product.getStatus());
+        dto.setCreatedBy(product.getCreatedBy() != null
+                ? product.getCreatedBy().toString() : null);
+        dto.setUpdatedBy(product.getUpdatedBy() != null
+                ? product.getUpdatedBy().toString() : null);
+        dto.setCreatedAt(product.getCreatedAt());
+        dto.setUpdatedAt(product.getUpdatedAt());
+        return dto;
     }
 
 }

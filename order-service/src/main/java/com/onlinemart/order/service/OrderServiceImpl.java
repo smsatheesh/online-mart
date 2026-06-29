@@ -11,14 +11,22 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.onlinemart.order.dto.request.CreateOrderRequestDto;
 import com.onlinemart.order.dto.request.OrderStatusRequestDto;
+import com.onlinemart.order.dto.request.BrowseRequestDto;
 import com.onlinemart.order.dto.response.OrderDataDto;
 import com.onlinemart.order.dto.response.OrderDetailResponseDto;
 import com.onlinemart.order.dto.response.OrderDto;
 import com.onlinemart.order.dto.response.OrderResponseDto;
 import com.onlinemart.order.dto.response.ErrorResponseDto;
+import com.onlinemart.order.dto.response.BrowseResponseDto;
+import com.onlinemart.order.dto.response.OrderBrowseResponseDto;
 import com.onlinemart.order.entity.Order;
 import com.onlinemart.order.entity.OrderItems;
 import com.onlinemart.order.mapper.OrderMapper;
@@ -32,6 +40,9 @@ import com.onlinemart.order.client.dto.response.CartItemsDataDto;
 import com.onlinemart.order.event.OrderFailedItemEvent;
 import com.onlinemart.order.event.OrderCancelledEvent;
 import com.onlinemart.order.outbox.OutboxWriter;
+import com.onlinemart.order.dto.response.BrowseMetaDto;
+import com.onlinemart.order.helper.BrowseHelper;
+import org.springframework.data.jpa.domain.Specification;
 
 @Slf4j
 @Service
@@ -244,6 +255,28 @@ public class OrderServiceImpl implements OrderService {
                         item.getQuantity(),
                         item.getUnitPrice()))
                 .toList();
+    }
+
+    @Override
+    public BrowseResponseDto<OrderBrowseResponseDto> browse(BrowseRequestDto req) {
+        Specification<Order> spec = BrowseHelper.buildSpecification(req.getFilters());
+        Pageable pageable = BrowseHelper.buildPageable(req);
+
+        Page<Order> resultPage = orderRepository.findAll(spec, pageable);
+
+        List<OrderBrowseResponseDto> data = resultPage.getContent()
+                .stream()
+                .map(orderMapper::toOrderBrowseDto)
+                .collect(Collectors.toList());
+
+        BrowseMetaDto meta = new BrowseMetaDto(
+                req.getPage(),
+                req.getSize(),
+                req.getLimit(),
+                resultPage.getTotalElements()
+        );
+
+        return new BrowseResponseDto<>(true, "Orders fetched successfully", data, meta);
     }
 
     private OrderDto fetchOrder(Order order) {

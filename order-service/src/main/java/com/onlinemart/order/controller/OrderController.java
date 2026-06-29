@@ -17,11 +17,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 import com.onlinemart.order.dto.request.CreateOrderRequestDto;
 import com.onlinemart.order.dto.request.OrderStatusRequestDto;
+import com.onlinemart.order.dto.request.BrowseRequestDto;
 import com.onlinemart.order.dto.response.OrderDetailResponseDto;
+import com.onlinemart.order.dto.response.BrowseResponseDto;
 import com.onlinemart.order.dto.response.OrderResponseDto;
+import com.onlinemart.order.dto.response.OrderBrowseResponseDto;
+import com.onlinemart.order.dto.response.OrderBrowseSwaggerResponse;
 import com.onlinemart.order.service.OrderService;
 import jakarta.validation.Valid;
 
@@ -83,6 +88,49 @@ public class OrderController {
         request.setOrderId(orderId);
         OrderDetailResponseDto response = orderService.updateStatusOfOrder(request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(
+            summary = "Browse orders",
+            description = "Fetch paginated, filtered, and sorted list of orders. Filters use AND logic."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Orders fetched successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = OrderBrowseSwaggerResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(hidden = true)))
+    })
+    @PostMapping("/browse")
+    public ResponseEntity<BrowseResponseDto<OrderBrowseResponseDto>> browse(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Browse request with pagination, filters and sort",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = BrowseRequestDto.class),
+                            examples = @ExampleObject(
+                                    name = "Filter by customer, sort by date",
+                                    value = """
+                        {
+                          "page": 0,
+                          "size": 20,
+                          "limit": 20,
+                          "filters": [{ "customerId": 1 }],
+                          "sort": [{ "createdAt": "desc" }]
+                        }
+                        """
+                            )
+                    )
+            )
+            @RequestBody BrowseRequestDto req) {
+        return ResponseEntity.ok(orderService.browse(req));
     }
 
 }

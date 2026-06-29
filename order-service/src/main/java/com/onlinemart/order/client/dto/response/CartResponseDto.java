@@ -1,27 +1,24 @@
 package com.onlinemart.order.client.dto.response;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.io.Serializable;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "Standard API response wrapper for cart operation")
-public class CartResponseDto implements Serializable {
+@Schema(description = "API response wrapper for cart operations")
+public class CartResponseDto {
 
     @Schema(description = "Indicates operation success", example = "true")
     private Boolean success;
 
-    @Schema(description = "Human readable message", example = "Cart created successfully")
+    @Schema(description = "Human readable message", example = "Cart saved successfully")
     private String message;
 
-    @Schema(description = "Payload containing cart details")
+    @Schema(description = "Payload containing cart and item details")
     private CartDataDto data;
-
 }
