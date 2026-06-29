@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.onlinemart.order.dto.request.CreateOrderRequestDto;
 import com.onlinemart.order.dto.request.OrderStatusRequestDto;
@@ -30,6 +31,7 @@ import com.onlinemart.order.client.CartClientService;
 import com.onlinemart.order.client.dto.response.CartItemsDataDto;
 import com.onlinemart.order.event.OrderFailedItemEvent;
 import com.onlinemart.order.event.OrderCancelledEvent;
+import com.onlinemart.order.outbox.OutboxWriter;
 
 @Slf4j
 @Service
@@ -40,13 +42,27 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final OrderEventPublisher orderEventPublisher;
     private final CartClientService cartClientService;
+    private final OutboxWriter outboxWriter;
 
-    public OrderServiceImpl(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderMapper orderMapper, OrderEventPublisher orderEventPublisher, CartClientService cartClientService) {
+    @Value("${spring.kafka.topic.order.created}")
+    private String orderCreatedTopic;
+
+    @Value("${spring.kafka.topic.order.cancelled}")
+    private String orderCancelledTopic;
+
+    public OrderServiceImpl(
+            OrderRepository orderRepository,
+            OrderItemRepository orderItemRepository,
+            OrderMapper orderMapper,
+            OrderEventPublisher orderEventPublisher,
+            CartClientService cartClientService,
+            OutboxWriter outboxWriter) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderMapper = orderMapper;
         this.orderEventPublisher = orderEventPublisher;
         this.cartClientService = cartClientService;
+        this.outboxWriter = outboxWriter;
     }
 
     @Override
@@ -105,7 +121,13 @@ public class OrderServiceImpl implements OrderService {
                     itemEvents
             );
 
-            orderEventPublisher.publishOrderCreated(event);
+            // orderEventPublisher.publishOrderCreated(event);
+            outboxWriter.write(
+                    savedOrder.getId().toString(),
+                    "ORDER_CREATED",
+                    orderCreatedTopic,
+                    event
+            );
 
             return OrderResponseDto.builder()
                     .success(Boolean.TRUE)
@@ -183,7 +205,13 @@ public class OrderServiceImpl implements OrderService {
                         itemEvents
                     );
 
-                orderEventPublisher.publishOrderCancelled(cancelledEvent);
+                // orderEventPublisher.publishOrderCancelled(cancelledEvent);
+                outboxWriter.write(
+                        order.getId().toString(),
+                        "ORDER_CANCELLED",
+                        orderCancelledTopic,
+                        cancelledEvent
+                );
                 log.info("Published {} for orderId={} previousStatus={}", "${spring.kafka.topic.order.cancelled}", order.getId(), previousStatus);
             }
 
