@@ -2,9 +2,10 @@ package com.onlinemart.order.service;
 
 import com.onlinemart.order.repository.OrderItemRepository;
 
-import java.util.Arrays;
 import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
+
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,13 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.onlinemart.order.dto.request.CreateOrderRequestDto;
 import com.onlinemart.order.dto.request.OrderStatusRequestDto;
 import com.onlinemart.order.dto.request.BrowseRequestDto;
-import com.onlinemart.order.dto.response.OrderDataDto;
 import com.onlinemart.order.dto.response.OrderDetailResponseDto;
 import com.onlinemart.order.dto.response.OrderDto;
 import com.onlinemart.order.dto.response.OrderResponseDto;
@@ -37,7 +34,6 @@ import com.onlinemart.order.repository.OrderRepository;
 import com.onlinemart.order.exception.OrderServiceException;
 import com.onlinemart.order.client.CartClientService;
 import com.onlinemart.order.client.dto.response.CartItemsDataDto;
-import com.onlinemart.order.event.OrderFailedItemEvent;
 import com.onlinemart.order.event.OrderCancelledEvent;
 import com.onlinemart.order.outbox.OutboxWriter;
 import com.onlinemart.order.dto.response.BrowseMetaDto;
@@ -192,7 +188,7 @@ public class OrderServiceImpl implements OrderService {
             Order order = orderRepository.findById(requestDto.getOrderId())
                     .orElseThrow(() -> buildException("Order Id not exists", "ORDER_NOT_FOUND"));
 
-            if("CANCELLED".equalsIgnoreCase(requestDto.getStatus())
+            if ("CANCELLED".equalsIgnoreCase(requestDto.getStatus())
                     && "DELIVERED".equalsIgnoreCase(order.getStatus())) {
                 buildException("Delivered order cannot be cancelled", "ORDER_CANCELLED_NOT_ALLOWED");
             }
@@ -206,7 +202,7 @@ public class OrderServiceImpl implements OrderService {
                 List<OrderItems> orderItems = orderItemRepository.findByOrderId(order.getId());
 
                 List<OrderItemEvent> itemEvents = orderItems.stream()
-                        .map(oi -> new OrderItemEvent(oi.getProductId(),  oi.getQuantity(), oi.getUnitPrice()))
+                        .map(oi -> new OrderItemEvent(oi.getProductId(), oi.getQuantity(), oi.getUnitPrice()))
                         .toList();
 
                 OrderCancelledEvent cancelledEvent = new OrderCancelledEvent(
@@ -214,7 +210,7 @@ public class OrderServiceImpl implements OrderService {
                         order.getCustomerId(),
                         order.getCartId(),
                         itemEvents
-                    );
+                );
 
                 // orderEventPublisher.publishOrderCancelled(cancelledEvent);
                 outboxWriter.write(
@@ -245,16 +241,6 @@ public class OrderServiceImpl implements OrderService {
                     .build();
             throw new OrderServiceException(error);
         }
-    }
-
-    @Override
-    public List<OrderFailedItemEvent> getOrderItems(Long orderId) {
-        return orderItemRepository.findByOrderId(orderId).stream()
-                .map(item -> new OrderFailedItemEvent(
-                        item.getProductId(),
-                        item.getQuantity(),
-                        item.getUnitPrice()))
-                .toList();
     }
 
     @Override

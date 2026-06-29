@@ -216,7 +216,7 @@ public class ProductServiceImpl implements ProductService {
                     orderId.toString(),
                     "INVENTORY_RESERVED",
                     inventoryReservedTopic,
-                    new InventoryReservedEvent(orderId)
+                    new InventoryReservedEvent(orderId, cartId)
             );
             log.info("Stock deducted: productId={} qty={} orderId={} remaining={}",
                     productId, quantity, orderId, product.getAvailableStockQuantity());

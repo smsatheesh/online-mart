@@ -10,4 +10,6 @@ public class InventoryReservedEvent {
 
     private Long orderId;
 
+    private Long cartId;
+
 }
