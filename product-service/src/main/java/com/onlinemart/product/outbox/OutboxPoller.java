@@ -1,84 +1,72 @@
 package com.onlinemart.product.outbox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class OutboxPoller {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxPoller.class);
+    private static final int MAX_RETRIES = 3;
+    private static final long BASE_DELAY_SECONDS = 5;
 
     private final OutboxEventRepository outboxEventRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    public OutboxPoller(OutboxEventRepository outboxEventRepository,
-                        KafkaTemplate<String, Object> kafkaTemplate,
-                        ObjectMapper objectMapper) {
-        this.outboxEventRepository = outboxEventRepository;
-        this.kafkaTemplate = kafkaTemplate;
-        this.objectMapper = objectMapper;
-    }
+    private static final Logger log = LoggerFactory.getLogger(OutboxPoller.class);
 
     @Scheduled(fixedDelay = 5000)
     @Transactional
     public void pollAndPublish() {
         List<OutboxEvent> pendingEvents =
-                outboxEventRepository.findByStatusOrderByCreatedAtAsc("PENDING");
+                outboxEventRepository.findRetryableEvents(LocalDateTime.now());
 
         if (pendingEvents.isEmpty()) return;
 
-        log.info("Outbox poller: {} pending events found", pendingEvents.size());
+        log.info("Outbox poller found {} retryable events", pendingEvents.size());
 
-        for (OutboxEvent outboxEvent : pendingEvents) {
+        for (OutboxEvent event : pendingEvents) {
             try {
-                Object payload = objectMapper.readValue(
-                        outboxEvent.getPayload(), Object.class);
+                Object payload = objectMapper.readValue(event.getPayload(), Object.class);
+                kafkaTemplate.send(event.getTopic(), event.getAggregateId(), payload).get();
 
-                kafkaTemplate.send(
-                        outboxEvent.getTopic(),
-                        outboxEvent.getAggregateId(),
-                        payload
-                ).get();
-
-                outboxEvent.setStatus("PUBLISHED");
-                outboxEvent.setPublishedAt(LocalDateTime.now());
-                outboxEventRepository.save(outboxEvent);
-
-                log.info("Outbox event published: id={} type={} topic={}",
-                        outboxEvent.getId(),
-                        outboxEvent.getEventType(),
-                        outboxEvent.getTopic());
+                event.setStatus("PUBLISHED");
+                event.setPublishedAt(LocalDateTime.now());
+                log.info("Outbox published: id={} type={} attempt={}",
+                        event.getId(), event.getEventType(), event.getRetryCount() + 1);
 
             } catch (Exception e) {
-                log.error("Failed to publish outbox event: id={} type={}",
-                        outboxEvent.getId(), outboxEvent.getEventType(), e);
-                outboxEvent.setStatus("FAILED");
-                outboxEventRepository.save(outboxEvent);
+                int attempts = event.getRetryCount() + 1;
+                event.setRetryCount(attempts);
+
+                if (attempts >= MAX_RETRIES) {
+                    event.setStatus("FAILED");
+                    event.setFailedAt(LocalDateTime.now());
+                    event.setNextRetryAt(null);
+                    log.error("Outbox event permanently failed after {} attempts: id={} type={}",
+                            attempts, event.getId(), event.getEventType(), e);
+                } else {
+                    long delaySeconds = BASE_DELAY_SECONDS * (long) Math.pow(2, attempts);
+                    event.setNextRetryAt(LocalDateTime.now().plusSeconds(delaySeconds));
+                    log.warn("Outbox event failed, retry {} of {} in {}s: id={} type={}",
+                            attempts, MAX_RETRIES, delaySeconds,
+                            event.getId(), event.getEventType());
+                }
             }
+            outboxEventRepository.save(event);
         }
     }
 
-    @Scheduled(fixedDelay = 60000)
-    @Transactional
-    public void retryFailed() {
-        List<OutboxEvent> failedEvents =
-                outboxEventRepository.findByStatusOrderByCreatedAtAsc("FAILED");
-
-        if (failedEvents.isEmpty()) return;
-
-        log.warn("Outbox retry: resetting {} failed events to PENDING", failedEvents.size());
-        failedEvents.forEach(event -> {
-            event.setStatus("PENDING");
-            outboxEventRepository.save(event);
-        });
-    }
 }
