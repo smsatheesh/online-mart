@@ -30,8 +30,8 @@ public class ProductMapper {
     public ProductResponseDto toSaveResponseDto(Product product) {
         if (product == null) return null;
         ProductDataDto data = ProductDataDto.builder()
-                .categoryId(product.getCategoryId() != null ? String.valueOf(product.getCategoryId()) : null)
-                .productId(product.getId() != null ? String.valueOf(product.getId()) : null)
+                .categoryId(product.getCategoryId() != null ? product.getCategoryId() : null)
+                .productId(product.getId() != null ? product.getId() : null)
                 .productName(product.getName())
                 .price(product.getPrice())
                 .availableQuantity(product.getAvailableStockQuantity())
