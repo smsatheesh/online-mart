@@ -8,7 +8,6 @@ import com.onlinemart.cart.dto.response.CartResponseDto;
 import com.onlinemart.cart.dto.response.CartDetailResponseDto;
 import com.onlinemart.cart.dto.response.BrowseResponseDto;
 import com.onlinemart.cart.dto.response.CartBrowseResponseDto;
-import com.onlinemart.cart.event.OrderFailedItemEvent;
 
 import java.util.List;
 
@@ -27,8 +26,6 @@ public interface CartService {
     void clearCartItems(Long cartId);
 
     CartResponseDto fetchCartAndDetails(Long cartId);
-
-    void restoreCart(Long cartId, List<OrderFailedItemEvent> items);
 
     BrowseResponseDto<CartBrowseResponseDto> browse(BrowseRequestDto req);
 
