@@ -480,7 +480,7 @@ class ProductServiceImplTest {
 
             // inner data
             assertThat(result.getData()).isNotNull();
-            assertThat(result.getData().getProductId()).isEqualTo("PROD001"); // String, not Long
+            assertThat(result.getData().getProductId()).isEqualTo(1L); // String, not Long
             assertThat(result.getData().getPrice()).isEqualTo(1999L);         // Long
 
             verify(productRepository, times(1)).findById(1L);

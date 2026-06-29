@@ -7,6 +7,7 @@ import com.onlinemart.order.dto.request.CreateOrderRequestDto;
 import com.onlinemart.order.dto.response.OrderResponseDto;
 import com.onlinemart.order.dto.response.OrderDataDto;
 import com.onlinemart.order.dto.response.OrderItemsDataDto;
+import com.onlinemart.order.dto.response.OrderBrowseResponseDto;
 import com.onlinemart.order.entity.Order;
 import com.onlinemart.order.entity.OrderItems;
 
@@ -60,6 +61,20 @@ public class OrderMapper {
                 .message("Order created successfully")
                 .data(data)
                 .build();
+    }
+
+    public OrderBrowseResponseDto toOrderBrowseDto(Order order) {
+        OrderBrowseResponseDto dto = new OrderBrowseResponseDto();
+        dto.setOrderId(order.getId());
+        dto.setCustomerId(order.getCustomerId());
+        dto.setCartId(order.getCartId());
+        dto.setStatus(order.getStatus());
+        dto.setTotalAmount(order.getTotalAmount());
+        dto.setCreatedBy(order.getCreatedBy());
+        dto.setUpdatedBy(order.getUpdatedBy());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedAt(order.getUpdatedAt());
+        return dto;
     }
 
 }

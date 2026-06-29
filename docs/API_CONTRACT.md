@@ -186,7 +186,6 @@ POST /products/discovery
   "page": 0,
   "size": 20,
   "limit": 20,
-  "searchText": "laptop",
   "filters": [
     {
       "categoryId": "CAT001"

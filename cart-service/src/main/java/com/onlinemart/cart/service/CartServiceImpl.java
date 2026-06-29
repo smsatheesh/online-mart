@@ -23,8 +23,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import com.onlinemart.cart.event.OrderFailedItemEvent;
-
+import com.onlinemart.cart.dto.request.BrowseRequestDto;
+import com.onlinemart.cart.dto.response.BrowseMetaDto;
+import com.onlinemart.cart.dto.response.BrowseResponseDto;
+import com.onlinemart.cart.dto.response.CartBrowseResponseDto;
+import com.onlinemart.cart.helper.BrowseHelper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -273,6 +281,28 @@ public class CartServiceImpl implements CartService {
                         cartId, item.getProductId());
             }
         });
+    }
+
+    @Override
+    public BrowseResponseDto<CartBrowseResponseDto> browse(BrowseRequestDto req) {
+        Specification<Cart> spec = BrowseHelper.buildSpecification(req.getFilters());
+        Pageable pageable = BrowseHelper.buildPageable(req);
+
+        Page<Cart> resultPage = cartRepository.findAll(spec, pageable);
+
+        List<CartBrowseResponseDto> data = resultPage.getContent()
+                .stream()
+                .map(cartMapper::toCartBrowseDto)   // via mapper, not private method
+                .collect(Collectors.toList());
+
+        BrowseMetaDto meta = new BrowseMetaDto(
+                req.getPage(),
+                req.getSize(),
+                req.getLimit(),
+                resultPage.getTotalElements()
+        );
+
+        return new BrowseResponseDto<>(true, "Carts fetched successfully", data, meta);
     }
 
     private CartDataDto fetchAllItems(Long cartId, Cart cart) {

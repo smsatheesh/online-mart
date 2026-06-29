@@ -1,7 +1,9 @@
 package com.onlinemart.cart.exception;
 
 import com.onlinemart.cart.dto.response.ErrorResponseDto;
+import lombok.Getter;
 
+@Getter
 public class CartServiceException extends RuntimeException {
 
     private final ErrorResponseDto errorResponse;
