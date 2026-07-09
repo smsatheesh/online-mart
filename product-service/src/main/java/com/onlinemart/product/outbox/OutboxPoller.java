@@ -46,9 +46,8 @@ public class OutboxPoller {
 
                 event.setStatus("PUBLISHED");
                 event.setPublishedAt(LocalDateTime.now());
-                log.info("Outbox published: id={} type={} attempt={}",
-                        event.getId(), event.getEventType(), event.getRetryCount() + 1);
-
+                log.info("Outbox published: outBoxId={} eventType={} orderId={} aggregateId={} attempt={}",
+                        event.getId(), event.getEventType(), event.getAggregateId(), event.getAggregateId(), event.getRetryCount() + 1);
             } catch (Exception e) {
                 int attempts = event.getRetryCount() + 1;
                 event.setRetryCount(attempts);
@@ -57,14 +56,14 @@ public class OutboxPoller {
                     event.setStatus("FAILED");
                     event.setFailedAt(LocalDateTime.now());
                     event.setNextRetryAt(null);
-                    log.error("Outbox event permanently failed after {} attempts: id={} type={}",
-                            attempts, event.getId(), event.getEventType(), e);
+                    log.error("Outbox event permanently failed after {} attempts: orderId={} eventId={} eventType={}",
+                            attempts, event.getAggregateId(), event.getId(), event.getEventType(), e);
                 } else {
                     long delaySeconds = BASE_DELAY_SECONDS * (long) Math.pow(2, attempts);
                     event.setNextRetryAt(LocalDateTime.now().plusSeconds(delaySeconds));
-                    log.warn("Outbox event failed, retry {} of {} in {}s: id={} type={}",
+                    log.warn("Outbox event failed, retry {} of {} in {}s: orderId={} eventId={} eventType={}",
                             attempts, MAX_RETRIES, delaySeconds,
-                            event.getId(), event.getEventType());
+                            event.getAggregateId(), event.getId(), event.getEventType());
                 }
             }
             outboxEventRepository.save(event);
