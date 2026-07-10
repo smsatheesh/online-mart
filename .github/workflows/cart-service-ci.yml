@@ -1,0 +1,55 @@
+name: cart-service CI
+
+# Runs only when a PR touches cart-service
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "cart-service/**"
+      - "pom.xml"
+      - ".github/workflows/cart-service-ci.yml"
+
+# Cancel older in-progress runs for the same PR when a new commit is pushed
+concurrency:
+  group: cart-service-ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Install parent POM
+        run: mvn -B -N install
+        working-directory: .
+
+      - name: Run tests
+        working-directory: cart-service
+        run: mvn -B verify -Dsurefire.userFile=false
+
+      - name: Publish test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: cart-service test results
+          path: "cart-service/target/surefire-reports/*.xml"
+          reporter: java-junit
+
+      - name: Upload build artifact (jar)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-service-jar
+          path: cart-service/target/*.jar
+          retention-days: 5
