@@ -20,6 +20,8 @@ import com.onlinemart.cart.client.ProductClient;
 import com.onlinemart.cart.client.dto.ProductResponseDto;
 import com.onlinemart.cart.client.dto.ProductDataDto;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import com.onlinemart.cart.dto.request.BrowseRequestDto;
@@ -41,6 +43,7 @@ public class CartServiceImpl implements CartService {
     private final CartMapper cartMapper;
     private final CartItemRepository cartItemRepository;
     private final ProductClient productClient;
+    private static final Logger log = LoggerFactory.getLogger(CartServiceImpl.class);
 
     public CartServiceImpl(CartRepository cartRepository, CartMapper cartMapper,
                            CartItemRepository cartItemRepository, ProductClient productClient) {
@@ -53,6 +56,17 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartResponseDto saveCart(CartRequestDto requestDto) {
         try {
+            Cart existingCart = cartRepository.findByCustomerIdAndPlatform(requestDto.getCustomerId(), requestDto.getPlatform());
+            if (existingCart != null) {
+                log.error("Cart already exists for platform {}", requestDto.getPlatform());
+                ErrorResponseDto error = ErrorResponseDto.builder()
+                        .success(Boolean.FALSE)
+                        .message("Cart exists for platform " + "'" + requestDto.getPlatform() + "'" + " for the customer")
+                        .errorCode("CART_ALREADY_EXISTS")
+                        .build();
+                throw new CartServiceException(error);
+            }
+
             Cart cart = cartMapper.toEntity(requestDto);
             Cart saved = cartRepository.save(cart);
             return cartMapper.toSaveResponseDto(saved);
@@ -70,18 +84,11 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDetailResponseDto fetchDetails(Long customerId) {
+        List<Cart> carts;
         try {
-            return cartRepository.findByCustomerId(customerId)
-                    .map(cartMapper::toDetailResponse)
-                    .orElseThrow(() -> {
-                        ErrorResponseDto error = ErrorResponseDto.builder()
-                                .success(Boolean.FALSE)
-                                .message("Cart not found for customer: " + customerId)
-                                .errorCode("CART_NOT_FOUND")
-                                .build();
-                        return new CartServiceException(error);
-                    });
+            carts = cartRepository.findByCustomerId(customerId);
         } catch (Exception ex) {
+            log.error("Failed to fetch cart", ex.getMessage(), ex);
             ErrorResponseDto error = ErrorResponseDto.builder()
                     .success(Boolean.FALSE)
                     .message("Failed to fetch cart")
@@ -89,6 +96,17 @@ public class CartServiceImpl implements CartService {
                     .build();
             throw new CartServiceException(error);
         }
+
+        if (carts.isEmpty()) {
+            ErrorResponseDto error = ErrorResponseDto.builder()
+                    .success(Boolean.FALSE)
+                    .message("Cart not found for the customer: " + customerId)
+                    .errorCode("CART_NOT_FOUND")
+                    .build();
+            throw new CartServiceException(error);
+        }
+
+        return cartMapper.toDetailResponse(carts);
     }
 
     @Override
