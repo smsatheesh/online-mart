@@ -29,7 +29,8 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Install parent POM (If multi-module)
+
+      - name: Install parent POM
         run: mvn -B -N install
         working-directory: .
 
