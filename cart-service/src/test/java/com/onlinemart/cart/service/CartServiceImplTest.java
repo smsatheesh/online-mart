@@ -236,8 +236,9 @@ class CartServiceImplTest {
                     .message("Cart fetched successfully")
                     .build();
 
-            when(cartRepository.findByCustomerId(100L)).thenReturn(Optional.of(sampleCart));
-            when(cartMapper.toDetailResponse(sampleCart)).thenReturn(expectedDetail);
+            List<Cart> carts = List.of(sampleCart);
+            when(cartRepository.findByCustomerId(100L)).thenReturn(carts);
+            when(cartMapper.toDetailResponse(carts)).thenReturn(expectedDetail);
 
             CartDetailResponseDto result = cartService.fetchDetails(100L);
 
@@ -245,9 +246,43 @@ class CartServiceImplTest {
             assertThat(result.getMessage()).isEqualTo("Cart fetched successfully");
 
             verify(cartRepository).findByCustomerId(100L);
-            verify(cartMapper).toDetailResponse(sampleCart);
+            verify(cartMapper).toDetailResponse(carts);
 
             log.info("✔ fetchDetails_found PASSED");
+        }
+
+        @Test
+        @DisplayName("✅ Customer has multiple carts → all carts passed to mapper in one call")
+        void fetchDetails_multipleCarts_returnsAllInOneResponse() {
+            log.info("▶ TEST: fetchDetails_multipleCarts_returnsAllInOneResponse");
+
+            Cart secondCart = new Cart();
+            secondCart.setId(2L);
+            secondCart.setCustomerId(100L);
+            secondCart.setPlatform("MOBILE");
+            secondCart.setStatus(Boolean.TRUE);
+
+            List<Cart> carts = List.of(sampleCart, secondCart);
+
+            CartDetailResponseDto expectedDetail = CartDetailResponseDto.builder()
+                    .success(Boolean.TRUE)
+                    .message("Cart fetched successfully")
+                    .build();
+
+            when(cartRepository.findByCustomerId(100L)).thenReturn(carts);
+            when(cartMapper.toDetailResponse(carts)).thenReturn(expectedDetail);
+
+            CartDetailResponseDto result = cartService.fetchDetails(100L);
+
+            // Regression guard: a customer with >1 cart previously triggered
+            // IncorrectResultSizeDataAccessException when the repository method
+            // returned a single Optional<Cart>. Now the full list is fetched and
+            // handed to the mapper in one call instead of failing.
+            assertThat(result.getSuccess()).isTrue();
+            verify(cartRepository).findByCustomerId(100L);
+            verify(cartMapper).toDetailResponse(carts);
+
+            log.info("✔ fetchDetails_multipleCarts PASSED");
         }
 
         @Test
@@ -255,16 +290,20 @@ class CartServiceImplTest {
         void fetchDetails_notFound_throwsException() {
             log.info("▶ TEST: fetchDetails_notFound_throwsException");
 
-            when(cartRepository.findByCustomerId(999L)).thenReturn(Optional.empty());
+            when(cartRepository.findByCustomerId(999L)).thenReturn(List.of());
 
             CartServiceException ex = catchThrowableOfType(
                     () -> cartService.fetchDetails(999L),
                     CartServiceException.class
             );
 
-            // NOTE: fetchDetails wraps ALL exceptions (including CartServiceException)
-            // into CART_FETCH_FAILED because it has no rethrow guard for CartServiceException
-            assertThat(ex.getErrorResponse().getErrorCode()).isEqualTo("CART_FETCH_FAILED");
+            // fetchDetails now checks isEmpty() outside the repository try/catch,
+            // so CART_NOT_FOUND is no longer masked as CART_FETCH_FAILED.
+            assertThat(ex.getErrorResponse().getErrorCode()).isEqualTo("CART_NOT_FOUND");
+            assertThat(ex.getErrorResponse().getMessage()).contains("999");
+
+            // Mapper must never be invoked when there's nothing to map
+            verify(cartMapper, never()).toDetailResponse(any());
 
             log.warning("✔ fetchDetails_notFound PASSED — errorCode=" + ex.getErrorResponse().getErrorCode());
         }
@@ -291,8 +330,9 @@ class CartServiceImplTest {
         void fetchDetails_repositoryCalledOnce() {
             log.info("▶ TEST: fetchDetails_repositoryCalledOnce");
 
-            when(cartRepository.findByCustomerId(100L)).thenReturn(Optional.of(sampleCart));
-            when(cartMapper.toDetailResponse(sampleCart)).thenReturn(
+            List<Cart> carts = List.of(sampleCart);
+            when(cartRepository.findByCustomerId(100L)).thenReturn(carts);
+            when(cartMapper.toDetailResponse(carts)).thenReturn(
                     CartDetailResponseDto.builder().success(Boolean.TRUE).build()
             );
 

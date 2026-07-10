@@ -26,6 +26,8 @@ public class RestExceptionHandler {
         // Map specific service error codes to appropriate HTTP statuses
         if (err.getErrorCode() != null && ("CART_NOT_FOUND".equalsIgnoreCase(err.getErrorCode()) || ("CART_ITEM_NOT_FOUND".equalsIgnoreCase(err.getErrorCode())))) {
             status = HttpStatus.NOT_FOUND;
+        } else if (err.getErrorCode() != null && ("CART_ALREADY_EXISTS").equalsIgnoreCase(err.getErrorCode())) {
+            status = HttpStatus.CONFLICT;
         }
         return new ResponseEntity<>(err, status);
     }
