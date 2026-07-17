@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,6 +24,6 @@ public class CartDetailResponseDto {
     private String message;
 
     @Schema(description = "Payload containing cart details without items")
-    private CartDto data;
+    private List<CartDto> data;
 
 }
