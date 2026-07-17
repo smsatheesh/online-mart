@@ -158,6 +158,32 @@ services:
       - online-mart-network
 
   # ──────────────────────────────────────────
+  # Customer Service  (port 8084)
+  # ──────────────────────────────────────────
+  customer-service:
+    build:
+      context: .
+      dockerfile: customer-service/Dockerfile
+    container_name: customer-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_db
+      SPRING_DATASOURCE_USERNAME: customer_user
+      SPRING_DATASOURCE_PASSWORD: customer_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9094
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - online-mart-network
+
+  # ──────────────────────────────────────────
   # Spring Cloud Gateway  (port 8080)
   # ──────────────────────────────────────────
   api-gateway:

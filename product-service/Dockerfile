@@ -7,6 +7,7 @@ COPY api-gateway/pom.xml api-gateway/pom.xml
 COPY product-service/ product-service/
 COPY order-service/pom.xml order-service/pom.xml
 COPY cart-service/pom.xml cart-service/pom.xml
+COPY customer-service/pom.xml customer-service/pom.xml
 
 RUN mvn install -N -DskipTests
 RUN mvn clean package -pl product-service -DskipTests

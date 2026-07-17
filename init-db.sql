@@ -12,3 +12,8 @@ GRANT ALL PRIVILEGES ON DATABASE cart_db TO cart_user;
 CREATE USER order_user WITH PASSWORD 'order_pass';
 CREATE DATABASE order_db OWNER order_user;
 GRANT ALL PRIVILEGES ON DATABASE order_db TO order_user;
+
+-- Customer Service
+CREATE USER customer_user WITH PASSWORD 'customer_pass';
+CREATE DATABASE customer_db OWNER customer_user;
+GRANT ALL PRIVILEGES ON DATABASE customer_db TO customer_user;
