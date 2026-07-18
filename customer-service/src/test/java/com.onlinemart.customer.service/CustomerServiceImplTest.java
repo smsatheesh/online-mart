@@ -7,8 +7,10 @@ import com.onlinemart.customer.entity.Customer;
 import com.onlinemart.customer.entity.CustomerDetails;
 import com.onlinemart.customer.exception.CustomerServiceException;
 import com.onlinemart.customer.mapper.CustomerMapper;
+import com.onlinemart.customer.outbox.OutboxWriter;
 import com.onlinemart.customer.repository.CustomerDetailRepository;
 import com.onlinemart.customer.repository.CustomerRepository;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,13 +18,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.hibernate.exception.ConstraintViolationException;
 
 import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +38,9 @@ class CustomerServiceImplTest {
 
     @Mock
     private CustomerMapper customerMapper;
+
+    @Mock
+    private OutboxWriter outboxWriter;
 
     @Mock
     private CustomerDetailServiceImpl customerDetailServiceImpl;
@@ -70,6 +75,7 @@ class CustomerServiceImplTest {
                 .build();
 
         when(customerMapper.toEntity(createCustomerDto)).thenReturn(customer);
+        when(customerRepository.save(customer)).thenReturn(customer);   // <-- ADD THIS LINE
         when(customerDetailServiceImpl.saveCustomerDetails(eq(1L), any())).thenReturn(customerDetails);
         when(customerMapper.toSaveResponseDto(customer, customerDetails)).thenReturn(responseData);
 
@@ -80,7 +86,6 @@ class CustomerServiceImplTest {
         assertThat(response.getData()).isEqualTo(responseData);
         verify(customerRepository).save(customer);
     }
-
     @Test
     void saveCustomer_duplicateUsername_throwsConflictException() {
         when(customerMapper.toEntity(createCustomerDto)).thenReturn(customer);
