@@ -1,39 +1,36 @@
 package com.onlinemart.customer.service;
 
 import com.onlinemart.customer.dto.request.customer.CreateCustomerDto;
-import com.onlinemart.customer.dto.response.customer.CustomerResponseDto;
 import com.onlinemart.customer.dto.response.ErrorResponseDto;
+import com.onlinemart.customer.dto.response.customer.CustomerResponseDto;
 import com.onlinemart.customer.dto.response.customer.SaveCustomerDataDto;
 import com.onlinemart.customer.entity.Customer;
 import com.onlinemart.customer.entity.CustomerDetails;
+import com.onlinemart.customer.event.CustomerCreatedEvent;
 import com.onlinemart.customer.exception.CustomerConstraintViolation;
 import com.onlinemart.customer.exception.CustomerServiceException;
 import com.onlinemart.customer.mapper.CustomerMapper;
-import com.onlinemart.customer.repository.CustomerDetailRepository;
+import com.onlinemart.customer.outbox.OutboxWriter;
 import com.onlinemart.customer.repository.CustomerRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
     private final CustomerDetailServiceImpl customerDetailServiceImp;
+    private final OutboxWriter outboxWriter;
 
-    public CustomerServiceImpl(
-            CustomerRepository customerRepository,
-            CustomerDetailRepository customerDetailRepository,
-            CustomerMapper customerMapper,
-            CustomerDetailServiceImpl customerDetailServiceImp
-    ) {
-        this.customerRepository = customerRepository;
-        this.customerMapper = customerMapper;
-        this.customerDetailServiceImp = customerDetailServiceImp;
-    }
+    @Value("${spring.kafka.topic.customer.created}")
+    private String customerCreatedTopic;
 
     @Override
     @Transactional
@@ -44,6 +41,16 @@ public class CustomerServiceImpl implements CustomerService {
 
             CustomerDetails customerDetails = customerDetailServiceImp.saveCustomerDetails(customer.getId(), createCustomerDto.getCustomerDetails());
             SaveCustomerDataDto responseData = customerMapper.toSaveResponseDto(customer, customerDetails);
+
+            CustomerCreatedEvent event = new CustomerCreatedEvent();
+            event.setCustomerId(responseData.getId());
+
+            outboxWriter.write(
+                    customer.getId().toString(),
+                    "CUSTOMER_CREATED",
+                    customerCreatedTopic,
+                    event
+            );
 
             return CustomerResponseDto.builder()
                     .success(Boolean.TRUE)
@@ -108,11 +115,11 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     public Customer fetchCustomerById(Long customerId) {
-            Customer customer = customerRepository.findById(customerId)
-                    .orElseThrow(
-                            () -> buildException("Customer not exists", "CUSTOMER_NOT_FOUND")
-                    );
-            return customer;
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(
+                        () -> buildException("Customer not exists", "CUSTOMER_NOT_FOUND")
+                );
+        return customer;
     }
 
     private String extractConstraintName(DataIntegrityViolationException ex) {
